@@ -1,21 +1,54 @@
 fun main() {
-    fun part1(input: List<String>): Int {
-        return input.size
+    // PART 1
+
+    fun numbersFromLine(line: String): Pair<Int, Int> {
+        val parts = line.split("   ")
+        val leftNum = parts[0].toInt()
+        val rightNum = parts[1].toInt()
+        return Pair(leftNum, rightNum)
     }
+    check(Pair(24, 113) == numbersFromLine("24   113"))
+
+    fun part1(input: List<String>): Int {
+        val ll = mutableListOf<Int>()
+        val lr = mutableListOf<Int>()
+
+        input.forEach {
+            val (l, r) = numbersFromLine(it);
+            ll.add(l)
+            lr.add(r)
+        }
+        ll.sort()
+        lr.sort()
+
+        var diff = 0
+        for ((l, r) in ll.zip(lr)) {
+            //println("($l, $r) > $r - $l = ${r - l}")
+            diff += Math.abs(r - l)
+        }
+        return diff
+    }
+    check(11 == part1(readInput("Day01_test")))
+    println("part 1 answer: ${part1(readInput("Day01"))}")
 
     fun part2(input: List<String>): Int {
-        return input.size
+        val ll = mutableListOf<Int>()
+        val lr = mutableListOf<Int>()
+
+        input.forEach {
+            val (l, r) = numbersFromLine(it);
+            ll.add(l)
+            lr.add(r)
+        }
+
+        var res = 0
+        for (n in ll) {
+            val hitsOnRight = lr.count { it == n }
+            //println("n = $n ($hitsOnRight times) ~ ${n * hitsOnRight}")
+            res += n * hitsOnRight
+        }
+        return res
     }
-
-    // Test if implementation meets criteria from the description, like:
-    check(part1(listOf("test_input")) == 1)
-
-    // Or read a large test input from the `src/Day01_test.txt` file:
-    val testInput = readInput("Day01_test")
-    check(part1(testInput) == 1)
-
-    // Read the input from the `src/Day01.txt` file.
-    val input = readInput("Day01")
-    part1(input).println()
-    part2(input).println()
+    check(31 == part2(readInput("Day01_test")))
+    println("part 2 answer: ${part2(readInput("Day01"))}")
 }

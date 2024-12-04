@@ -37,8 +37,8 @@ fun main() {
         }
         return res
     }
-    check(161 == part1(readInput("Day03_test")))
-    println("part 1 answer: ${part1(readInput("Day03"))}")
+    check(161 == part1(readInput("03_test")))
+    println("part 1 answer: ${part1(readInput("03"))}")
 
     fun part2(input: List<String>): Int {
         val line = input.joinToString(" ")
@@ -60,6 +60,6 @@ fun main() {
         }
         return res
     }
-    check(48 == part2(readInput("Day03_test2")))
-    println("part 2 answer: ${part2(readInput("Day03"))}")
+    check(48 == part2(readInput("03_test2")))
+    println("part 2 answer: ${part2(readInput("03"))}")
 }

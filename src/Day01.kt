@@ -28,8 +28,8 @@ fun main() {
         }
         return diff
     }
-    check(11 == part1(readInput("Day01_test")))
-    println("part 1 answer: ${part1(readInput("Day01"))}")
+    check(11 == part1(readInput("01_test")))
+    println("part 1 answer: ${part1(readInput("01"))}")
 
     fun part2(input: List<String>): Int {
         val ll = mutableListOf<Int>()
@@ -49,6 +49,6 @@ fun main() {
         }
         return res
     }
-    check(31 == part2(readInput("Day01_test")))
-    println("part 2 answer: ${part2(readInput("Day01"))}")
+    check(31 == part2(readInput("01_test")))
+    println("part 2 answer: ${part2(readInput("01"))}")
 }

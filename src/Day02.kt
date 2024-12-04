@@ -42,8 +42,8 @@ fun main() {
         val reports = input.map { lineToReport(it) }
         return reports.count { isValidReport(it) }
     }
-    check(2 == part1(readInput("Day02_test")))
-    println("part 1 answer: ${part1(readInput("Day02"))}")
+    check(2 == part1(readInput("02_test")))
+    println("part 1 answer: ${part1(readInput("02"))}")
 
     fun combinationsRemovingOne(el: List<Int>): Sequence <List<Int>> = sequence {
         for (i in el.indices) {
@@ -62,6 +62,6 @@ fun main() {
         val reports = input.map { lineToReport(it) }
         return reports.count { isValidReportWithDampener(it) }
     }
-    check(4 == part2(readInput("Day02_test")))
-    println("part 2 answer: ${part2(readInput("Day02"))}")
+    check(4 == part2(readInput("02_test")))
+    println("part 2 answer: ${part2(readInput("02"))}")
 }

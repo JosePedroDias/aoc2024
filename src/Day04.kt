@@ -143,7 +143,7 @@ fun main() {
                 }
             }
         }
-        
+
         return hits
     }
     check(9 == part2(readInput("04_test"), false))

@@ -2,6 +2,7 @@ typealias CharMatrix = Array<CharArray>
 
 fun main() {
     val WORD = listOf('X', 'M', 'A', 'S')
+    val WORD2 = listOf('M', 'A', 'S')
 
     fun fillMatrix(input: List<String>): CharMatrix {
         val W = input[0].length
@@ -108,4 +109,43 @@ fun main() {
     }
     check(18 == part1(readInput("04_test"), false))
     println("part 1 answer: ${part1(readInput("04"), false)}")
+
+    fun part2(input: List<String>, debug: Boolean): Int {
+        val m = fillMatrix(input)
+        val W = m[0].size
+        val H = m.size
+        var hits = 0
+
+        val cases = listOf(
+            Pair( 1,  1), // ++DIAGONAL
+            Pair(-1, -1), // --DIAGONAL
+            Pair(-1,  1), // -+DIAGONAL
+            Pair( 1, -1), // +-DIAGONAL
+        )
+
+        for (y in 1 until H-1) {
+            for (x in 1 until W-1) {
+                var numFound = 0
+                for ((dx, dy) in cases) {
+                    val x0 = x - dx
+                    val y0 = y - dy
+                    val found = WORD2.indices.all {
+                        val xx = x0 + it * dx
+                        val yy = y0 + it * dy
+                        WORD2[it] == m[yy][xx]
+                    }
+                    if (found) {
+                        ++numFound
+                    }
+                }
+                if (numFound > 1) {
+                    ++hits
+                }
+            }
+        }
+        
+        return hits
+    }
+    check(9 == part2(readInput("04_test"), false))
+    println("part 2 answer: ${part2(readInput("04"), false)}")
 }

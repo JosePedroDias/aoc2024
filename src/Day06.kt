@@ -77,6 +77,19 @@ private class Matrix(lines: List<String>) {
         m[p.y][p.x] = c
     }
 
+    fun allHaving(c: Char): List<Pos> {
+        val all = mutableListOf<Pos>()
+        for (y in 0..< h) {
+            for (x in 0..< w) {
+                val p = Pos(x, y)
+                if (g(p) == c) {
+                    all.add(p)
+                }
+            }
+        }
+        return all
+    }
+
     override fun toString(): String {
         return StringBuilder().apply {
             for (y in 0..< h) {
@@ -89,11 +102,14 @@ private class Matrix(lines: List<String>) {
     }
 }
 
+private fun posDirToString(p: Pos, d: Dir): String {
+    return "${p.x} ${p.y} ${d.x} ${d.y}"
+}
+
 fun main() {
     fun part1(input: List<String>): Int {
         val m = Matrix(input)
         // println("pos:${m.pos} | dir:${m.dir} ${m.dir.x},${m.dir.y}"); println(m)
-
         val positions = mutableSetOf(m.pos)
         while (true) {
             val pos2 = m.dir.moveForward(m.pos)
@@ -117,4 +133,40 @@ fun main() {
     }
     check(41 == part1(readInput("06_test")))
     println("part 1 answer: ${part1(readInput("06"))}")
+
+    fun part2(input: List<String>): Int {
+        val m0 = Matrix(input)
+        val candidates = m0.allHaving(EMPTY)
+        var loopsFound = 0
+        for (p in candidates) {
+            val m = Matrix(input) // TODO kinda dumb
+            m.s(p, OBSTACLE)
+            val positions = mutableSetOf(posDirToString(m.pos, m.dir))
+            ite@
+            while (true) {
+                val pos2 = m.dir.moveForward(m.pos)
+                try {
+                    val charAtPos2 = m.g(pos2)
+                    if (charAtPos2 == OBSTACLE) {
+                        m.dir = m.dir.turnRight()
+                    } else {
+                        m.s(m.pos, EMPTY)
+                        m.pos = pos2
+                        m.s(m.pos, guardCharFromDir(m.dir))
+                        val pd = posDirToString(m.pos, m.dir)
+                        if (positions.contains(pd)) {
+                            ++loopsFound
+                            break@ite
+                        }
+                        positions.add(pd)
+                    }
+                } catch (e: Throwable) {
+                    break@ite
+                }
+            }
+        }
+        return loopsFound
+    }
+    check(6 == part2(readInput("06_test")))
+    println("part 2 answer: ${part2(readInput("06"))}")
 }

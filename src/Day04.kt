@@ -1,6 +1,8 @@
+import kotlinx.coroutines.runBlocking
+
 typealias CharMatrix = Array<CharArray>
 
-fun main() {
+fun main() = runBlocking {
     val WORD = listOf('X', 'M', 'A', 'S')
     val WORD2 = listOf('M', 'A', 'S')
 

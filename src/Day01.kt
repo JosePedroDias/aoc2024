@@ -1,4 +1,6 @@
-fun main() {
+import kotlinx.coroutines.runBlocking
+
+fun main() = runBlocking {
     // PART 1
 
     fun numbersFromLine(line: String): Pair<Int, Int> {

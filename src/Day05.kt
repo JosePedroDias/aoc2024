@@ -1,4 +1,6 @@
-fun main() {
+import kotlinx.coroutines.runBlocking
+
+fun main() = runBlocking {
     fun extractInput(input: List<String>): Pair<MutableList<Pair<Int, Int>>, MutableList<List<Int>>> {
         val orderings = mutableListOf<Pair<Int, Int>>()
         val candidates = mutableListOf<List<Int>>()

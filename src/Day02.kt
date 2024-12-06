@@ -1,3 +1,4 @@
+import kotlinx.coroutines.runBlocking
 import kotlin.math.absoluteValue
 
 fun <T> List<T>.allExcept(index: Int): List<T> {
@@ -5,7 +6,7 @@ fun <T> List<T>.allExcept(index: Int): List<T> {
     return subList(0, index) + subList(index + 1, size)
 }
 
-fun main() {
+fun main() = runBlocking {
     fun lineToReport(line: String): List<Int> {
         return line.split(" ").map { it.toInt() }
     }

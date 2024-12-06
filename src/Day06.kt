@@ -1,4 +1,5 @@
 import kotlin.time.measureTime
+import kotlinx.coroutines.*
 
 private data class Pos (var x: Int, var y: Int)
 
@@ -47,7 +48,7 @@ private class Matrix(val w: Int, val h: Int) {
     var pos: Pos = Pos(0, 0)
 
     fun fillFromLines(lines: List<String>) {
-        lines.forEachIndexed() {
+        lines.forEachIndexed {
                 y, line ->
             val row = m[y]
             line.forEachIndexed fe@{ x, ch ->
@@ -121,7 +122,7 @@ private fun posDirToString(p: Pos, d: Dir): String {
     return "${p.x} ${p.y} ${d.x} ${d.y}"
 }
 
-fun main() {
+fun main() = runBlocking {
     fun part1(input: List<String>): Int {
         val (w, h) = getDims(input)
         val m = Matrix(w, h)
@@ -157,11 +158,9 @@ fun main() {
         var loopsFound = 0
         for (p in candidates) {
             val m = m0.clone()
-            //val m = Matrix(w, h); m.fillFromLines(input)
             m.s(p, OBSTACLE)
             val positions = mutableSetOf(posDirToString(m.pos, m.dir))
-            ite@
-            while (true) {
+            ite@ while (true) {
                 val pos2 = m.dir.moveForward(m.pos)
                 try {
                     val charAtPos2 = m.g(pos2)
@@ -183,13 +182,13 @@ fun main() {
                 }
             }
         }
-        println(loopsFound)
         return loopsFound
     }
 
     val dt = measureTime {
         check(41 == part1(readInput("06_test")))
         println("part 1 answer: ${part1(readInput("06"))}")
+
         check(6 == part2(readInput("06_test")))
         println("part 2 answer: ${part2(readInput("06"))}")
     }

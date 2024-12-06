@@ -122,67 +122,76 @@ private fun posDirToString(p: Pos, d: Dir): String {
     return "${p.x} ${p.y} ${d.x} ${d.y}"
 }
 
-fun main() = runBlocking {
+private fun walk(m: Matrix): Int {
+    val positions = mutableSetOf(m.pos)
+    while (true) {
+        val pos2 = m.dir.moveForward(m.pos)
+        try {
+            val charAtPos2 = m.g(pos2)
+            if (charAtPos2 == OBSTACLE) {
+                m.dir = m.dir.turnRight()
+                // println("OBSTACLE: TURN RIGHT TO ${m.dir}"); println(m)
+            } else {
+                m.s(m.pos, EMPTY)
+                m.pos = pos2
+                m.s(m.pos, guardCharFromDir(m.dir))
+                positions.add(m.pos)
+                // println("EMPTY: MOVE FORWARD ${m.dir} TO ${m.pos}"); println(m)
+            }
+        } catch (e: Throwable) {
+            // println("OUT OF BOUNDS: ALL DONE"); println(positions)
+            return positions.size
+        }
+    }
+}
+
+private fun walk2(m: Matrix): Boolean {
+    val positions = mutableSetOf(posDirToString(m.pos, m.dir))
+    while (true) {
+        val pos2 = m.dir.moveForward(m.pos)
+        try {
+            val charAtPos2 = m.g(pos2)
+            if (charAtPos2 == OBSTACLE) {
+                m.dir = m.dir.turnRight()
+            } else {
+                m.s(m.pos, EMPTY)
+                m.pos = pos2
+                m.s(m.pos, guardCharFromDir(m.dir))
+                val pd = posDirToString(m.pos, m.dir)
+                if (positions.contains(pd)) {
+                    return true
+                }
+                positions.add(pd)
+            }
+        } catch (e: Throwable) {
+            return false
+        }
+    }
+}
+
+suspend fun main() {
+    val cs = CoroutineScope(Dispatchers.IO)
+
     fun part1(input: List<String>): Int {
         val (w, h) = getDims(input)
         val m = Matrix(w, h)
         m.fillFromLines(input)
-        // println("pos:${m.pos} | dir:${m.dir} ${m.dir.x},${m.dir.y}"); println(m)
-        val positions = mutableSetOf(m.pos)
-        while (true) {
-            val pos2 = m.dir.moveForward(m.pos)
-            try {
-                val charAtPos2 = m.g(pos2)
-                if (charAtPos2 == OBSTACLE) {
-                    m.dir = m.dir.turnRight()
-                    // println("OBSTACLE: TURN RIGHT TO ${m.dir}"); println(m)
-                } else {
-                    m.s(m.pos, EMPTY)
-                    m.pos = pos2
-                    m.s(m.pos, guardCharFromDir(m.dir))
-                    positions.add(m.pos)
-                    // println("EMPTY: MOVE FORWARD ${m.dir} TO ${m.pos}"); println(m)
-                }
-            } catch (e: Throwable) {
-                // println("OUT OF BOUNDS: ALL DONE"); println(positions)
-                return positions.size
-            }
-        }
+        return walk(m)
     }
 
-    fun part2(input: List<String>): Int {
+    suspend fun part2(input: List<String>): Int {
         val (w, h) = getDims(input)
         val m0 = Matrix(w, h)
         m0.fillFromLines(input)
-        val candidates = m0.allHaving(EMPTY)
-        var loopsFound = 0
-        for (p in candidates) {
+        val candidates = m0.allHaving(EMPTY).map {p ->
             val m = m0.clone()
             m.s(p, OBSTACLE)
-            val positions = mutableSetOf(posDirToString(m.pos, m.dir))
-            ite@ while (true) {
-                val pos2 = m.dir.moveForward(m.pos)
-                try {
-                    val charAtPos2 = m.g(pos2)
-                    if (charAtPos2 == OBSTACLE) {
-                        m.dir = m.dir.turnRight()
-                    } else {
-                        m.s(m.pos, EMPTY)
-                        m.pos = pos2
-                        m.s(m.pos, guardCharFromDir(m.dir))
-                        val pd = posDirToString(m.pos, m.dir)
-                        if (positions.contains(pd)) {
-                            ++loopsFound
-                            break@ite
-                        }
-                        positions.add(pd)
-                    }
-                } catch (e: Throwable) {
-                    break@ite
-                }
-            }
+            m
         }
-        return loopsFound
+
+        return candidates.map { m ->
+            cs.async { walk2(m) }
+        }.awaitAll().filter { it }.size
     }
 
     val dt = measureTime {
@@ -192,5 +201,5 @@ fun main() = runBlocking {
         check(6 == part2(readInput("06_test")))
         println("part 2 answer: ${part2(readInput("06"))}")
     }
-    println(dt) // 4.6s
+    println(dt) // 4.6s to 1.1s after parallelism kicks in
 }

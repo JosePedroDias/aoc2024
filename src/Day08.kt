@@ -97,9 +97,16 @@ private fun part1(lines: List<String>): Int {
         mFreqs[f] = m
     }
 
-    println(mFreqs)
+    val antinodes = mutableSetOf<Vec2>()
+    //println(mFreqs)
 
-    return 0
+    //println(combinations(3).toList())
+
+    // for each freq
+    //   combine keys of each mFreqs
+    //   calc antinodes in matrix and add to antinodes set
+
+    return antinodes.size
 }
 
 private fun part2(input: List<String>): Int {

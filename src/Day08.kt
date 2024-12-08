@@ -37,7 +37,13 @@ private class Matrix2<T>(val w: Int, val h: Int) {
         return StringBuilder().apply {
             for (y in 0..< h) {
                 for (x in 0..< w) {
-                    append(g(Vec2(x, y)))
+                    val v = g(Vec2(x, y))
+                    if (v is Boolean) {
+                        append(if (v) 'T' else 'F')
+                    } else {
+                        append(v ?: '.')
+                    }
+
                 }
                 append('\n')
             }
@@ -65,7 +71,34 @@ private fun part0(lines: List<String>) {
     println("max frequency amount: ${m.values.max()}")
 }
 
-private fun part1(input: List<String>): Int {
+private fun part1(lines: List<String>): Int {
+    val w = lines[0].length
+    val h = lines.size
+    val mAll = Matrix2<Char>(w, h)
+    lines.forEachIndexed {
+            y, line ->
+        line.forEachIndexed fe@{ x, ch ->
+            if (ch != '.') {
+                mAll.s(Vec2(x, y), ch)
+            }
+        }
+    }
+    println(mAll)
+
+    val frequencies = mAll.m.values.toSet()
+    println(frequencies)
+
+    val mFreqs = mutableMapOf<Char, Matrix2<Boolean>>()
+    for (f in frequencies) {
+        val m = Matrix2<Boolean>(w, h)
+        for (p in mAll.allHaving(f)) {
+            m.s(p, true)
+        }
+        mFreqs[f] = m
+    }
+
+    println(mFreqs)
+
     return 0
 }
 
@@ -78,7 +111,7 @@ fun main() {
         part0(readInput("08_test"))
         part0(readInput("08"))
 
-        //check(14 == part1(readInput("08_test")))
+        check(14 == part1(readInput("08_test")))
         //println("part 1 answer: ${part1(readInput("08"))}")
 
         //check(11387L == part2(readInput("08_test")))

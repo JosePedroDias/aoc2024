@@ -57,13 +57,36 @@ private fun defrag(disk0: Disk): Disk {
     return disk
 }
 
-private fun checksum(disk: Disk): Int {
-    var cs = 0
+private fun defrag2(disk0: Disk): Disk {
+    val disk = disk0.clone()
+    var b = disk.size - 1 // from index (value is not null)
+    var a = 0 // to index (value is null)
+    while (b >= a) {
+        val vb = disk[b]
+        if (vb != null) {
+            disk[b] = null
+            var va = disk[a]
+            while (va != null) {
+                ++a
+                va = disk[a]
+            }
+            if (a <= b) {
+                disk[a] = vb
+                ++a
+                //if (disk.size < 100) { println(diskToString(disk)) }
+            }
+        }
+        --b
+    }
+    return disk
+}
+
+private fun checksum(disk: Disk): Long {
+    var cs = 0L
     disk.forEachIndexed {
         idx, v ->
         if (v != null) {
-            val add = idx * v
-            //val add2 = idx.toLong() * v.toLong(); println("i:$add l:$add2")
+            val add = idx.toLong() * v.toLong()
             cs += add
         }
     }
@@ -81,19 +104,23 @@ fun main() {
         val dT2S = diskToString(dT2)
         check(dT2S == "0099811188827773336446555566..............")
         val csDT2 = checksum(dT2)
-        check(csDT2 == 1928)
+        check(csDT2 == 1928L)
 
         val s1 = readInputAsString("09")
         val d1 = toDisk(s1)
         val d2 = defrag(d1)
         val csD2 = checksum(d2)
-        println("part 1 answer: $csD2") // too low: 2132861615
+        println("part 1 answer: $csD2")
 
-        //check(9999 == part1(readInput("09_test")))
-        //println("part 1 answer: ${part1(readInput("09"))}")
+        val dT3 = defrag2(dT1)
+        val dT3S = diskToString(dT3)
+        check(dT3S == "00992111777.44.333....5555.6666.....8888..")
+        val csDT3 = checksum(dT3)
+        check(csDT3 == 2858L)
 
-        //check(9999 == part2(readInput("09_test")))
-        //println("part 2 answer: ${part2(readInput("09"))}")
+        val d3 = defrag2(d1)
+        val csD3 = checksum(d3)
+        println("part 2 answer: $csD3")
     }
     println(dt)
 }

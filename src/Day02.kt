@@ -6,7 +6,7 @@ fun <T> List<T>.allExcept(index: Int): List<T> {
     return subList(0, index) + subList(index + 1, size)
 }
 
-fun main() = runBlocking {
+fun main() {
     fun lineToReport(line: String): List<Int> {
         return line.split(" ").map { it.toInt() }
     }

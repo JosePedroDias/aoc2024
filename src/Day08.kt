@@ -183,5 +183,5 @@ fun main() {
         check(34 == part2(readInput("08_test")))
         println("part 2 answer: ${part2(readInput("08"))}")
     }
-    println(dt) // 4.6s to 1.1s after parallelism kicks in
+    println(dt)
 }

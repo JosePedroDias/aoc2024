@@ -1,6 +1,6 @@
 import kotlinx.coroutines.runBlocking
 
-fun main() = runBlocking {
+fun main() {
     val rgxMul = Regex("""mul\((\d{1,3}),(\d{1,3})\)""")
     rgxMul.find("xxxmul(23,7)cenas").let { m ->
         check(m != null && m.groupValues.size == 3)

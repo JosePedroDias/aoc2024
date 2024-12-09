@@ -102,28 +102,18 @@ private fun part1(lines: List<String>): Int {
             }
         }
     }
-    //println(mAll)
 
     val frequencies = mAll.m.values.toSet()
-    //println(frequencies)
-
     val antiNodes = mutableSetOf<Vec2>()
 
     for (f in frequencies) {
-        //println("freq: $f")
         val positions = mAll.allHaving(f).toList()
-        //val m = Matrix2<Char>(w, h)
-        //for (p in positions) { m.s(p, f) }
-        //println("positions: $positions")
+        //val m = Matrix2<Char>(w, h); for (p in positions) { m.s(p, f) }
         for ((iA, iB) in combinations(positions.size)) {
             val pA = positions[iA]
             val pB = positions[iB]
-            //println("pA: $pA")
-            //println("pA: $pB")
             val an1 = pB.sub(pA).add(pB)
             val an2 = pA.sub(pB).add(pA)
-            //println("an1: $an1")
-            //println("an2: $an2")
             if (mAll.inBounds(an1) && !positions.contains(an1)) {
                 antiNodes.add(an1)
                 //m.s(an1, '#')
@@ -136,14 +126,48 @@ private fun part1(lines: List<String>): Int {
         //println(m)
     }
 
-    //println(antiNodes)
-    //println(antiNodes.size)
-
     return antiNodes.size
 }
 
-private fun part2(input: List<String>): Int {
-    return 0
+private fun part2(lines: List<String>): Int {
+    val w = lines[0].length
+    val h = lines.size
+    val mAll = Matrix2<Char>(w, h)
+    val antiNodes = mutableSetOf<Vec2>()
+    lines.forEachIndexed {
+            y, line ->
+        line.forEachIndexed fe@{ x, ch ->
+            if (ch != '.') {
+                val p = Vec2(x, y)
+                mAll.s(p, ch)
+                antiNodes.add(p)
+            }
+        }
+    }
+    val frequencies = mAll.m.values.toSet()
+    for (f in frequencies) {
+        val positions = mAll.allHaving(f).toList()
+        //val m = Matrix2<Char>(w, h); for (p in positions) { m.s(p, f) }
+        for ((iA, iB) in combinations(positions.size)) {
+            val pA = positions[iA]
+            val pB = positions[iB]
+            for (i in -50..50) {
+                val an1 = pB.sub(pA).mulS(i).add(pB)
+                val an2 = pA.sub(pB).mulS(i).add(pA)
+                if (mAll.inBounds(an1)) {
+                    antiNodes.add(an1)
+                    //if (!m.m.containsKey(an1)) { m.s(an1, '#') }
+                }
+                if (mAll.inBounds(an2)) {
+                    antiNodes.add(an2)
+                    //if (!m.m.containsKey(an2)) { m.s(an2, '#') }
+                }
+            }
+        }
+        //println(m)
+    }
+
+    return antiNodes.size
 }
 
 fun main() {
@@ -151,11 +175,13 @@ fun main() {
         //part0(readInput("08_test"))
         //part0(readInput("08"))
 
+        //check(2 == part1(readInput("08_test2")))
         check(14 == part1(readInput("08_test")))
         println("part 1 answer: ${part1(readInput("08"))}")
 
-        //check(11387L == part2(readInput("08_test")))
-        //println("part 2 answer: ${part2(readInput("08"))}")
+        //check(9 == part2(readInput("08_test3")))
+        check(34 == part2(readInput("08_test")))
+        println("part 2 answer: ${part2(readInput("08"))}")
     }
     println(dt) // 4.6s to 1.1s after parallelism kicks in
 }

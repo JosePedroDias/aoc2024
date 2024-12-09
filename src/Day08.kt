@@ -1,6 +1,22 @@
 import kotlin.time.measureTime
 
-private data class Vec2 (var x: Int, var y: Int)
+private data class Vec2 (var x: Int, var y: Int) {
+    fun add(v: Vec2): Vec2 {
+        return Vec2(x + v.x, y + v.y)
+    }
+
+    fun sub(v: Vec2): Vec2 {
+        return Vec2(x - v.x, y - v.y)
+    }
+
+    fun mulS(n: Int): Vec2 {
+        return Vec2(n * x, n * y)
+    }
+
+    fun clone(): Vec2 {
+        return Vec2(x, y)
+    }
+}
 
 private class Matrix2<T>(val w: Int, val h: Int) {
     val m = mutableMapOf<Vec2, T>()
@@ -20,17 +36,20 @@ private class Matrix2<T>(val w: Int, val h: Int) {
         m[p] = c
     }
 
-    fun allHaving(c: T): List<Vec2> {
-        val all = mutableListOf<Vec2>()
-        for (y in 0..< h) {
-            for (x in 0..< w) {
-                val p = Vec2(x, y)
-                if (g(p) == c) {
-                    all.add(p)
-                }
+    fun allHaving(c: T) = sequence {
+        for ((k, v) in m.entries) {
+            if (v == c) {
+                yield(k)
             }
         }
-        return all
+    }
+
+    fun clone(): Matrix2<T> {
+        val mc = Matrix2<T>(w, h)
+        for ((k, v) in m) {
+            mc.s(k, v)
+        }
+        return mc
     }
 
     override fun toString(): String {
@@ -83,30 +102,44 @@ private fun part1(lines: List<String>): Int {
             }
         }
     }
-    println(mAll)
+    //println(mAll)
 
     val frequencies = mAll.m.values.toSet()
-    println(frequencies)
+    //println(frequencies)
 
-    val mFreqs = mutableMapOf<Char, Matrix2<Boolean>>()
+    val antiNodes = mutableSetOf<Vec2>()
+
     for (f in frequencies) {
-        val m = Matrix2<Boolean>(w, h)
-        for (p in mAll.allHaving(f)) {
-            m.s(p, true)
+        //println("freq: $f")
+        val positions = mAll.allHaving(f).toList()
+        //val m = Matrix2<Char>(w, h)
+        //for (p in positions) { m.s(p, f) }
+        //println("positions: $positions")
+        for ((iA, iB) in combinations(positions.size)) {
+            val pA = positions[iA]
+            val pB = positions[iB]
+            //println("pA: $pA")
+            //println("pA: $pB")
+            val an1 = pB.sub(pA).add(pB)
+            val an2 = pA.sub(pB).add(pA)
+            //println("an1: $an1")
+            //println("an2: $an2")
+            if (mAll.inBounds(an1) && !positions.contains(an1)) {
+                antiNodes.add(an1)
+                //m.s(an1, '#')
+            }
+            if (mAll.inBounds(an2) && !positions.contains(an2)) {
+                antiNodes.add(an2)
+                //m.s(an2, '#')
+            }
         }
-        mFreqs[f] = m
+        //println(m)
     }
 
-    val antinodes = mutableSetOf<Vec2>()
-    //println(mFreqs)
+    //println(antiNodes)
+    //println(antiNodes.size)
 
-    //println(combinations(3).toList())
-
-    // for each freq
-    //   combine keys of each mFreqs
-    //   calc antinodes in matrix and add to antinodes set
-
-    return antinodes.size
+    return antiNodes.size
 }
 
 private fun part2(input: List<String>): Int {
@@ -115,11 +148,11 @@ private fun part2(input: List<String>): Int {
 
 fun main() {
     val dt = measureTime {
-        part0(readInput("08_test"))
-        part0(readInput("08"))
+        //part0(readInput("08_test"))
+        //part0(readInput("08"))
 
         check(14 == part1(readInput("08_test")))
-        //println("part 1 answer: ${part1(readInput("08"))}")
+        println("part 1 answer: ${part1(readInput("08"))}")
 
         //check(11387L == part2(readInput("08_test")))
         //println("part 2 answer: ${part2(readInput("08"))}")

@@ -29,3 +29,32 @@ fun combinations(n: Int) = sequence {
         }
     }
 }
+
+fun doesThrow(block: () -> Unit) {
+    return try {
+        block()
+        throw Error("Did not throw")
+    } catch (_: Error) {}
+}
+
+private const val MB = 1024 * 1024
+
+fun memUsage() {
+    val runtime = Runtime.getRuntime()
+
+    // Total memory allocated by JVM
+    val totalMemory = runtime.totalMemory()
+
+    // Free memory available within the allocated memory
+    val freeMemory = runtime.freeMemory()
+
+    val usedMemory = totalMemory - freeMemory
+
+    // Maximum memory that JVM can use
+    val maxMemory = runtime.maxMemory()
+
+    print("Used: ${usedMemory / MB} MB, ")
+    print("Free: ${freeMemory / MB} MB, ")
+    print("Total: ${totalMemory / MB} MB, ")
+    println("Max: ${maxMemory / MB} MB")
+}

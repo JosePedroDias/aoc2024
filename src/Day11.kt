@@ -85,24 +85,15 @@ private class LList {
     }
 
     fun getCurrentValue(): Long? {
+        //println("curr: $curr")
         return curr?.value
     }
 
-    fun next() {
-        if (curr != null) {
-            prev = curr
-            curr = curr!!.next
-        }
-    }
-
-    fun valueSequence() = sequence {
-        prev = null
-        curr = head
-        while (curr != null) {
-            yield(curr!!.value)
-            prev = curr
-            curr = curr!!.next
-        }
+    fun next(): Boolean {
+        if (curr == null) { return false }
+        prev = curr
+        curr = curr!!.next
+        return true
     }
 
     fun size(): Int {
@@ -134,16 +125,21 @@ private fun splitEvenlySizedNumber(n: Long): Pair<Long, Long> {
 
 private fun blinkNTimes(line: String, times: Int): Int {
     val stones = LList()
+    println("line: $line")
     parse(line, stones)
     var t = 0
     repeat(times) {
         ++t
         println("#$t")
-        memUsage()
+        //memUsage()
         stones.rewind()
         //println(stones)
-        for (n in stones.valueSequence()) {
+        var n: Long?
+        while (true) {
+            n = stones.getCurrentValue()
             //println("n:$n")
+            if (n == null) { break }
+
             when {
                 n == 0L -> stones.change(1)
                 nrDigits(n) % 2 == 0 -> {
@@ -153,6 +149,9 @@ private fun blinkNTimes(line: String, times: Int): Int {
                 }
                 else -> stones.change(2024 * n)
             }
+            //println(stones)
+
+            stones.next()
         }
     }
     //println(stones)
@@ -207,16 +206,16 @@ fun main() {
         check(l.size() == 4)
         check(l.toString() == "111, 22, 66, 333, ")
 
-        println("\n\n\n ********** \n\n\n")
+        //println("\n\n\n ********** \n\n\n")
 
-        check(22 == blinkNTimes("125 17", 6))
+        //check(22 == blinkNTimes("125 17", 6))
 
-        check(55312 == blinkNTimes(readInputAsString("11_test"), 25))
+        //check(55312 == blinkNTimes(readInputAsString("11_test"), 25))
 
-        println("part 1 answer: ${blinkNTimes(readInputAsString("11"), 25)}")
+        //println("part 1 answer: ${blinkNTimes(readInputAsString("11"), 25)}")
         println("part 2 answer: ${blinkNTimes(readInputAsString("11"), 75)}") // breaks at 36
 
-        memUsage()
+        //memUsage()
     }
     println(dt)
 }

@@ -34,8 +34,14 @@ private data class Island(val s: Set<Pos3>, var ch: Char = 'O') {
         return sum
     }
 
+    val sides: Int
+    get() = 0
+
     val price: Int
         get() = area * perimeter
+
+    val discountPrice: Int
+        get() = area * sides
 
     private fun neighbors(p: Pos3) = sequence {
         listOf(
@@ -185,6 +191,23 @@ private fun part1(m: Matrix4, debug: Boolean = false): Int {
     return totalPrice
 }
 
+private fun part2(m: Matrix4, debug: Boolean = false): Int {
+    if (debug) {
+        for (island in m.findIslands()) {
+            println(island.getMatrix())
+            println("area: ${island.area}")
+            println("sides: ${island.sides}")
+            println("discountPrice: ${island.discountPrice}")
+            println()
+        }
+    }
+
+    val totalPrice = m.findIslands().fold(0) { sum, island -> sum + island.price }
+    //println("totalPrice: $totalPrice")
+
+    return totalPrice
+}
+
 fun main() {
     val dt = measureTime {
         val mt1 = parse(readInput("12_test"))
@@ -196,6 +219,11 @@ fun main() {
         check(part1(mt2) == 772)
         check(part1(mt3) == 1930)
         println("Answer to part 1: ${part1(m)}")
+
+        check(part2(mt1, true) == 80)
+        //check(part2(mt2) == 436)
+        //check(part2(mt3) == 1206)
+        //println("Answer to part 2: ${part2(m)}")
     }
     println(dt)
 }

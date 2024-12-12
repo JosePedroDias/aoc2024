@@ -15,100 +15,46 @@ nr of stones after 25 iterations?
 #3    20    24   2     0    2      4       20          24  2024  36869184  36869184  40924  79424      [13]
 */
 
-private data class Node(var value: Long, var next: Node? = null)
+class Histogram {
+    private val m : MutableMap<Long, Long> = mutableMapOf()
 
-private class LList {
-    private var head: Node? = null
-    private var prev: Node? = null
-    private var curr: Node? = null
-
-    fun rewind() {
-        prev = null
-        curr = head
+    fun change(n: Long, delta: Long) {
+        val vOld = m.getOrDefault(n, 0)
+        val vNew = vOld + delta
+        if (vNew < 0) {
+            throw Error("negative histogram value!")
+        }
+        else if (vNew == 0L) { m.remove(n) }
+        else { m[n] = vNew }
     }
 
-    fun change(value: Long) {
-        if (curr == null) {
-            throw Error("empty?")
-        }
-        curr!!.value = value
+    fun inc(n: Long) {
+        change(n, 1)
     }
 
-    fun add(value: Long) {
-        if (curr != null && curr!!.next != null) {
-            throw Error("unsupported: not at the last node")
+    fun entries(): List<Pair<Long, Long>> {
+        val res = mutableListOf<Pair<Long, Long>>()
+        for ((k, v) in m.entries) {
+            res.add(Pair(k, v))
         }
-        val newNode = Node(value)
-        if (curr != null) {
-            if (prev != null) {
-                prev!!.next = curr
-            }
-            prev = curr
-        }
-        if (curr != null) {
-            curr!!.next = newNode
-        }
-        if (head == null) {
-            head = newNode
-        }
-        curr = newNode
+        return res
     }
 
-    fun addBefore(value: Long) {
-        val newNode = Node(value)
-        if (head == null) {
-            throw Error("??")
-        }
-        if (head == curr) {
-            head = newNode
-        }
-        if (prev != null) {
-            prev!!.next = newNode
-        }
-        if (curr != null) {
-            //curr!!.next = newNode
-            newNode.next = curr
-        }
-        curr = newNode
-        next()
+    fun sumAllValues(): Long {
+        return m.values.map { it.toLong() }.sum()
     }
 
     override fun toString(): String {
-        val sb = StringBuilder()
-        var current = head
-        while (current != null) {
-            sb.append(current.value)
-            sb.append(", ")
-            current = current.next
-        }
-        return sb.toString()
-    }
-
-    fun getCurrentValue(): Long? {
-        //println("curr: $curr")
-        return curr?.value
-    }
-
-    fun next(): Boolean {
-        if (curr == null) { return false }
-        prev = curr
-        curr = curr!!.next
-        return true
-    }
-
-    fun size(): Int {
-        var count = 0
-        var current = head
-        while (current != null) {
-            ++count
-            current = current.next
-        }
-        return count
+        return m.toString()
     }
 }
 
-private fun parse(line: String, l: LList) {
-    return line.split(" ").forEach { l.add(it.toLong()) }
+private typealias RuleSet = MutableMap<Long, Pair<Long, Long?>>
+
+private fun parse(line: String): Histogram {
+    val hg = Histogram()
+    line.split(" ").forEach { hg.inc(it.toLong()) }
+    return hg
 }
 
 private fun nrDigits(n: Long): Int {
@@ -123,99 +69,54 @@ private fun splitEvenlySizedNumber(n: Long): Pair<Long, Long> {
     return Pair(a, b)
 }
 
-private fun blinkNTimes(line: String, times: Int): Int {
-    val stones = LList()
-    println("line: $line")
-    parse(line, stones)
+private fun blinkNTimes(line: String, times: Int): Long {
+    val rules: RuleSet = mutableMapOf()
+    val histogram = parse(line)
+
     var t = 0
     repeat(times) {
         ++t
-        println("#$t")
-        //memUsage()
-        stones.rewind()
-        //println(stones)
-        var n: Long?
-        while (true) {
-            n = stones.getCurrentValue()
-            //println("n:$n")
-            if (n == null) { break }
+        //println("#$t")
+        //println("histogram: $histogram")
 
-            when {
-                n == 0L -> stones.change(1)
-                nrDigits(n) % 2 == 0 -> {
-                    val (a, b) = splitEvenlySizedNumber(n)
-                    stones.addBefore(a)
-                    stones.change(b)
+        histogram.entries().toList().forEach { (n, amount) ->
+            var res: Pair<Long, Long?>? = rules[n]
+            if (res == null) {
+                if (n == 0L) {
+                    res = Pair(1, null)
+                } else if (nrDigits(n) % 2 == 0) {
+                    res = splitEvenlySizedNumber(n)
+                } else {
+                    res = Pair(n * 2024, null)
                 }
-                else -> stones.change(2024 * n)
+                rules[n] = res
+                //println("new rule: $n -> $res")
+            } else {
+                //println("old rule: $n -> $res")
             }
-            //println(stones)
 
-            stones.next()
+            val (a, b) = res
+            histogram.change(n, -amount)
+            histogram.change(a, amount)
+            if (b != null) { histogram.change(b, amount) }
+            //println("histogram: $histogram")
         }
     }
-    //println(stones)
-    return stones.size()
+
+    return histogram.sumAllValues()
 }
 
 fun main() {
     val dt = measureTime {
-        check(nrDigits(2314) == 4)
-        check(splitEvenlySizedNumber(2314L).first == 23L)
-        check(splitEvenlySizedNumber(2314L).second == 14L)
+        check(nrDigits(2314L) == 4)
+        check(splitEvenlySizedNumber(2314L) == Pair(23L, 14L))
 
-        var l = LList()
-        check(l.size() == 0)
-        check(l.toString() == "")
-        l.add(11)
-        check(l.size() == 1)
-        check(l.toString() == "11, ")
-        l.add(22)
-        check(l.size() == 2)
-        check(l.toString() == "11, 22, ")
+        check(22L == blinkNTimes("125 17", 6))
 
-        l = LList()
-        check(l.size() == 0)
-        l.add(111)
-        l.add(222)
-        l.add(333)
-        l.rewind()
-        check(l.size() == 3)
-        check(l.toString() == "111, 222, 333, ")
-        l.change(1111)
-        check(l.size() == 3)
-        check(l.toString() == "1111, 222, 333, ")
-        l.addBefore(77) // FAILS
-        check(l.size() == 4)
-        check(l.toString() == "77, 1111, 222, 333, ")
+        check(55312L == blinkNTimes(readInputAsString("11_test"), 25))
 
-        l = LList()
-        check(l.size() == 0)
-        l.add(111)
-        l.add(222)
-        l.add(333)
-        check(333L == l.getCurrentValue())
-        l.rewind()
-        check(111L == l.getCurrentValue())
-        l.next()
-        check(222L == l.getCurrentValue())
-        l.addBefore(22)
-        check(l.size() == 4)
-        check(l.toString() == "111, 22, 222, 333, ")
-        l.change(66)
-        check(l.size() == 4)
-        check(l.toString() == "111, 22, 66, 333, ")
-
-        //println("\n\n\n ********** \n\n\n")
-
-        //check(22 == blinkNTimes("125 17", 6))
-
-        //check(55312 == blinkNTimes(readInputAsString("11_test"), 25))
-
-        //println("part 1 answer: ${blinkNTimes(readInputAsString("11"), 25)}")
-        println("part 2 answer: ${blinkNTimes(readInputAsString("11"), 75)}") // breaks at 36
-
-        //memUsage()
+        println("part 1 answer: ${blinkNTimes(readInputAsString("11"), 25)}")
+        println("part 2 answer: ${blinkNTimes(readInputAsString("11"), 75)}")
     }
     println(dt)
 }

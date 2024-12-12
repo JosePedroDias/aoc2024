@@ -1,6 +1,10 @@
 import kotlin.time.measureTime
 
-private data class Pos3(val x: Int, val y: Int)
+private data class Pos3(val x: Int, val y: Int) {
+    override fun toString(): String {
+        return "($x,$y)"
+    }
+}
 
 private data class MutablePair(var first: Int, var second: Int)
 
@@ -32,6 +36,7 @@ private data class Island(val s: Set<Pos3>, var ch: Char = 'O') {
         return sum
     }
 
+    // -x, +x, -y, +y
     private fun countContinuousSegments(l: List<Pos3>, attr: (Pos3) -> Int, groupAttr: (Pos3) -> Int): Int {
         if (l.isEmpty()) return 0
         if (l.size == 1) return 1
@@ -41,7 +46,6 @@ private data class Island(val s: Set<Pos3>, var ch: Char = 'O') {
         val dims = l.groupBy { groupAttr(it) }
 
         for (segs in dims.values) {
-            ++count
             var prev: Pos3? = null
             for (p in segs) {
                 if (prev != null) {
@@ -52,6 +56,7 @@ private data class Island(val s: Set<Pos3>, var ch: Char = 'O') {
                         prev = p
                     }
                 } else {
+                    ++count
                     prev = p
                 }
             }
@@ -296,12 +301,12 @@ fun main() {
         check(part1(mt3) == 1930)
         println("Answer to part 1: ${part1(m)}")
 
-        //check(part2(mt1) == 80)
-        //check(part2(mt2) == 436)
-        check(part2(mt4, true) == 236) // 219 (E: 17a, 12s)
-        //check(part2(mt5) == 368)
-        //check(part2(mt3) == 1206) // failing
-        //println("Answer to part 2: ${part2(m)}")
+        check(part2(mt1) == 80)
+        check(part2(mt2) == 436)
+        check(part2(mt4) == 236)
+        check(part2(mt5, true) == 368) // 424
+        check(part2(mt3) == 1206) // 1243
+        println("Answer to part 2: ${part2(m)}")
     }
     println(dt)
 }

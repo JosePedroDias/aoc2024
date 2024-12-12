@@ -1,8 +1,6 @@
 import kotlin.time.measureTime
 
 private data class Pos3(val x: Int, val y: Int)
-//private data class Rect(val x: Int, val y: Int, val w: Int, val h: Int)
-//private typealias Island = Set<Pos3>
 
 private data class MutablePair(var first: Int, var second: Int)
 
@@ -34,8 +32,66 @@ private data class Island(val s: Set<Pos3>, var ch: Char = 'O') {
         return sum
     }
 
+    private fun countContinuousXSegments(l: List<Pos3>): Int {
+        if (l.isEmpty()) return 0
+        var count = 1
+        var prev: Pos3? = null
+        for (p in l) {
+            if (prev != null) {
+                if (p.x - prev.x > 1) { ++count }
+            }
+            prev = p
+        }
+        return count
+    }
+
+    private fun countContinuousYSegments(l: List<Pos3>): Int {
+        if (l.isEmpty()) return 0
+        var count = 1
+        var prev: Pos3? = null
+        for (p in l) {
+            if (prev != null) {
+                if (p.y - prev.y > 1) { ++count }
+            }
+            prev = p
+        }
+        return count
+    }
+
     val sides: Int
-    get() = 0
+    get() {
+        val segmentsPerDirection: Array<MutableList<Pos3>> = arrayOf(
+            mutableListOf(),
+            mutableListOf(),
+            mutableListOf(),
+            mutableListOf(),
+        )
+        for (p in s) {
+            for ((idx, pp) in neighbors2(p)) {
+                segmentsPerDirection[idx].add(pp)
+            }
+        }
+
+        var count = 0
+
+        val leftSegments = segmentsPerDirection[0]
+        leftSegments.sortBy { it.x }
+        count += countContinuousXSegments(leftSegments)
+
+        val rightSegments = segmentsPerDirection[1]
+        rightSegments.sortBy { Int.MAX_VALUE - it.x }
+        count += countContinuousXSegments(rightSegments)
+
+        val upSegments = segmentsPerDirection[2]
+        upSegments.sortBy { it.y }
+        count += countContinuousYSegments(upSegments)
+
+        val downSegments = segmentsPerDirection[3]
+        downSegments.sortBy { Int.MAX_VALUE - it.y }
+        count += countContinuousYSegments(downSegments)
+
+        return count
+    }
 
     val price: Int
         get() = area * perimeter
@@ -51,6 +107,19 @@ private data class Island(val s: Set<Pos3>, var ch: Char = 'O') {
             Pos3(p.x, p.y + 1),
         ).filter { s.contains(it) }
             .forEach { yield(it) }
+    }
+
+    private fun neighbors2(p: Pos3) = sequence {
+        listOf(
+            Pos3(p.x - 1, p.y), // 0: -x
+            Pos3(p.x + 1, p.y), // 1: +x
+            Pos3(p.x, p.y - 1), // 2: -y
+            Pos3(p.x, p.y + 1), // 3: +y
+        ).forEachIndexed { idx, pp ->
+            if (s.contains(pp)) {
+                yield(Pair(idx, pp))
+            }
+        }
     }
 
     fun getMatrix(): Matrix4 {

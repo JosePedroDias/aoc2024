@@ -32,16 +32,31 @@ private data class Island(val s: Set<Pos3>, var ch: Char = 'O') {
         return sum
     }
 
-    private fun countContinuousSegments(l: List<Pos3>, attr: (Pos3) -> Int): Int {
+    private fun countContinuousSegments(l: List<Pos3>, attr: (Pos3) -> Int, groupAttr: (Pos3) -> Int): Int {
         if (l.isEmpty()) return 0
-        var count = 1
-        var prev: Pos3? = null
-        for (p in l) {
-            if (prev != null) {
-                if (attr(p) - attr(prev) > 1) { ++count }
+        if (l.size == 1) return 1
+
+        var count = 0
+
+        val dims = l.groupBy { groupAttr(it) }
+
+        for (segs in dims.values) {
+            ++count
+            var prev: Pos3? = null
+            for (p in segs) {
+                if (prev != null) {
+                    if (attr(p) - attr(prev) != 1) {
+                        ++count
+                        prev = null
+                    } else {
+                        prev = p
+                    }
+                } else {
+                    prev = p
+                }
             }
-            prev = p
         }
+
         return count
     }
 
@@ -66,23 +81,19 @@ private data class Island(val s: Set<Pos3>, var ch: Char = 'O') {
 
         val leftSegments = segmentsPerDirection[0]
         leftSegments.sortBy { it.x }
-        count += countContinuousSegments(leftSegments, xSel)
-        //println("left: $leftSegments, count: $count")
+        count += countContinuousSegments(leftSegments, ySel, xSel)
 
         val rightSegments = segmentsPerDirection[1]
         rightSegments.sortBy { it.x }
-        count += countContinuousSegments(rightSegments, xSel)
-        //println("right: $rightSegments, count: $count")
+        count += countContinuousSegments(rightSegments, ySel, xSel)
 
         val upSegments = segmentsPerDirection[2]
         upSegments.sortBy { it.y }
-        count += countContinuousSegments(upSegments, ySel)
-        //println("up: $upSegments, count: $count")
+        count += countContinuousSegments(upSegments, xSel, ySel)
 
         val downSegments = segmentsPerDirection[3]
         downSegments.sortBy { it.y }
-        count += countContinuousSegments(downSegments, ySel)
-        //println("down: $downSegments, count: $count")
+        count += countContinuousSegments(downSegments, xSel, ySel)
 
         return count
     }
@@ -110,7 +121,7 @@ private data class Island(val s: Set<Pos3>, var ch: Char = 'O') {
             Pos3(p.x, p.y - 1), // 2: -y
             Pos3(p.x, p.y + 1), // 3: +y
         ).forEachIndexed { idx, pp ->
-            if (s.contains(pp)) {
+            if (!s.contains(pp)) {
                 yield(Pair(idx, pp))
             }
         }
@@ -265,10 +276,10 @@ private fun part2(m: Matrix4, debug: Boolean = false): Int {
         }
     }
 
-    val totalPrice = m.findIslands().fold(0) { sum, island -> sum + island.price }
-    //println("totalPrice: $totalPrice")
+    val totalDiscountPrice = m.findIslands().fold(0) { sum, island -> sum + island.discountPrice }
+    println("totalDiscountPrice: $totalDiscountPrice")
 
-    return totalPrice
+    return totalDiscountPrice
 }
 
 fun main() {
@@ -276,6 +287,8 @@ fun main() {
         val mt1 = parse(readInput("12_test"))
         val mt2 = parse(readInput("12_test2"))
         val mt3 = parse(readInput("12_test3"))
+        val mt4 = parse(readInput("12_test4"))
+        val mt5 = parse(readInput("12_test5"))
         val m = parse(readInput("12"))
 
         check(part1(mt1) == 140)
@@ -283,9 +296,11 @@ fun main() {
         check(part1(mt3) == 1930)
         println("Answer to part 1: ${part1(m)}")
 
-        check(part2(mt1, true) == 80)
+        //check(part2(mt1) == 80)
         //check(part2(mt2) == 436)
-        //check(part2(mt3) == 1206)
+        check(part2(mt4, true) == 236) // 219 (E: 17a, 12s)
+        //check(part2(mt5) == 368)
+        //check(part2(mt3) == 1206) // failing
         //println("Answer to part 2: ${part2(m)}")
     }
     println(dt)

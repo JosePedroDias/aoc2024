@@ -32,26 +32,13 @@ private data class Island(val s: Set<Pos3>, var ch: Char = 'O') {
         return sum
     }
 
-    private fun countContinuousXSegments(l: List<Pos3>): Int {
+    private fun countContinuousSegments(l: List<Pos3>, attr: (Pos3) -> Int): Int {
         if (l.isEmpty()) return 0
         var count = 1
         var prev: Pos3? = null
         for (p in l) {
             if (prev != null) {
-                if (p.x - prev.x > 1) { ++count }
-            }
-            prev = p
-        }
-        return count
-    }
-
-    private fun countContinuousYSegments(l: List<Pos3>): Int {
-        if (l.isEmpty()) return 0
-        var count = 1
-        var prev: Pos3? = null
-        for (p in l) {
-            if (prev != null) {
-                if (p.y - prev.y > 1) { ++count }
+                if (attr(p) - attr(prev) > 1) { ++count }
             }
             prev = p
         }
@@ -74,21 +61,28 @@ private data class Island(val s: Set<Pos3>, var ch: Char = 'O') {
 
         var count = 0
 
+        val xSel = fun(p: Pos3): Int { return p.x }
+        val ySel = fun(p: Pos3): Int { return p.y }
+
         val leftSegments = segmentsPerDirection[0]
         leftSegments.sortBy { it.x }
-        count += countContinuousXSegments(leftSegments)
+        count += countContinuousSegments(leftSegments, xSel)
+        //println("left: $leftSegments, count: $count")
 
         val rightSegments = segmentsPerDirection[1]
-        rightSegments.sortBy { Int.MAX_VALUE - it.x }
-        count += countContinuousXSegments(rightSegments)
+        rightSegments.sortBy { it.x }
+        count += countContinuousSegments(rightSegments, xSel)
+        //println("right: $rightSegments, count: $count")
 
         val upSegments = segmentsPerDirection[2]
         upSegments.sortBy { it.y }
-        count += countContinuousYSegments(upSegments)
+        count += countContinuousSegments(upSegments, ySel)
+        //println("up: $upSegments, count: $count")
 
         val downSegments = segmentsPerDirection[3]
-        downSegments.sortBy { Int.MAX_VALUE - it.y }
-        count += countContinuousYSegments(downSegments)
+        downSegments.sortBy { it.y }
+        count += countContinuousSegments(downSegments, ySel)
+        //println("down: $downSegments, count: $count")
 
         return count
     }
@@ -267,7 +261,7 @@ private fun part2(m: Matrix4, debug: Boolean = false): Int {
             println("area: ${island.area}")
             println("sides: ${island.sides}")
             println("discountPrice: ${island.discountPrice}")
-            println()
+            println("\n---\n")
         }
     }
 

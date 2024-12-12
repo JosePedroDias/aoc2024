@@ -2,9 +2,67 @@ import kotlin.time.measureTime
 
 private data class Pos3(val x: Int, val y: Int)
 //private data class Rect(val x: Int, val y: Int, val w: Int, val h: Int)
-private typealias Island = Set<Pos3>
+//private typealias Island = Set<Pos3>
 
 private data class MutablePair(var first: Int, var second: Int)
+
+private data class Island(val s: Set<Pos3>, var ch: Char = 'O') {
+    fun getBoundary(): Pair<IntRange, IntRange> {
+        val xLimits = MutablePair(Int.MAX_VALUE, Int.MIN_VALUE)
+        val yLimits = MutablePair(Int.MAX_VALUE, Int.MIN_VALUE)
+        for ((x, y) in s) {
+            if (x < xLimits.first) xLimits.first = x
+            if (x > xLimits.second) xLimits.second = x
+            if (y < yLimits.first) yLimits.first = y
+            if (y > yLimits.second) yLimits.second = y
+        }
+        return Pair(
+            xLimits.first..xLimits.second,
+            yLimits.first .. yLimits.second,
+        )
+    }
+
+    val area: Int
+    get() = s.size
+
+    val perimeter: Int
+    get() {
+        var sum = 0
+        for (p in s) {
+            sum += 4 - neighbors(p).count()
+        }
+        return sum
+    }
+
+    val price: Int
+        get() = area * perimeter
+
+    private fun neighbors(p: Pos3) = sequence {
+        listOf(
+            Pos3(p.x - 1, p.y),
+            Pos3(p.x + 1, p.y),
+            Pos3(p.x, p.y - 1),
+            Pos3(p.x, p.y + 1),
+        ).filter { s.contains(it) }
+            .forEach { yield(it) }
+    }
+
+    fun getMatrix(): Matrix4 {
+        val bounds = getBoundary()
+        val m = Matrix4(
+            bounds.first.last - bounds.first.first + 1,
+            bounds.second.last - bounds.second.first + 1,
+        )
+        for (p in s) {
+            val p0 = Pos3(
+                p.x - bounds.first.first,
+                p.y - bounds.second.first,
+            )
+            m.s(p0, ch)
+        }
+        return m
+    }
+}
 
 private data class Matrix4(val w: Int, val h: Int) {
     val m: MutableMap<Pos3, Char> = mutableMapOf()
@@ -38,7 +96,7 @@ private data class Matrix4(val w: Int, val h: Int) {
         return m2[ch]!!.toMutableList()
     }
 
-    fun neighbors(p: Pos3) = sequence {
+    private fun neighbors(p: Pos3) = sequence {
         listOf(
             Pos3(p.x - 1, p.y),
             Pos3(p.x + 1, p.y),
@@ -48,24 +106,9 @@ private data class Matrix4(val w: Int, val h: Int) {
         .forEach { yield(it) }
     }
 
-    fun neighborsWithValue(p: Pos3, ch: Char) = sequence {
+    private fun neighborsWithValue(p: Pos3, ch: Char) = sequence {
         neighbors(p).filter { g(it) == ch }
         .forEach { yield(it) }
-    }
-
-    fun getBoundary(cells: Collection<Pos3>): Pair<IntRange, IntRange> {
-        val xLims = MutablePair(Int.MAX_VALUE, Int.MIN_VALUE)
-        val yLims = MutablePair(Int.MAX_VALUE, Int.MIN_VALUE)
-        for ((x, y) in cells) {
-            if (x < xLims.first) xLims.first = x
-            if (x > xLims.second) xLims.second = x
-            if (y < yLims.first) yLims.first = y
-            if (y > yLims.second) yLims.second = y
-        }
-        return Pair(
-            xLims.first..xLims.second,
-            yLims.first .. yLims.second,
-        )
     }
 
     fun findIslands(ch: Char) = sequence {
@@ -88,8 +131,16 @@ private data class Matrix4(val w: Int, val h: Int) {
                     positionsWithThisValue.remove(p)
                 }
             } while (toVisit.size > 0)
-            yield(island)
+            yield(Island(island, ch))
             island = mutableSetOf()
+        }
+    }
+
+    fun findIslands() = sequence {
+        for (ch in chars()) {
+            for (island in findIslands(ch)) {
+                yield(island)
+            }
         }
     }
 
@@ -117,36 +168,34 @@ private fun parse(lines: List<String>): Matrix4 {
     return m
 }
 
+private fun part1(m: Matrix4, debug: Boolean = false): Int {
+    if (debug) {
+        for (island in m.findIslands()) {
+            println(island.getMatrix())
+            println("area: ${island.area}")
+            println("perimeter: ${island.perimeter}")
+            println("price: ${island.price}")
+            println()
+        }
+    }
+
+    val totalPrice = m.findIslands().fold(0) { sum, island -> sum + island.price }
+    //println("totalPrice: $totalPrice")
+
+    return totalPrice
+}
+
 fun main() {
     val dt = measureTime {
-        val lines = readInput("12_test")
-        //val lines = readInput("12_test2")
-        //val lines = readInput("12_test3")
-        //val lines = readInput("12")
-        val m = parse(lines)
-        println(m)
-        val chars = m.chars().toMutableList()
-        for (ch in chars) {
-            //println("\nislands with $ch...")
-            for (island in m.findIslands(ch)) {
-                //println(island)
-                val bounds = m.getBoundary(island)
-                val m2 = Matrix4(
-                    bounds.first.last - bounds.first.first + 1,
-                    bounds.second.last - bounds.second.first + 1,
-                )
-                for (p in island) {
-                    val p0 = Pos3(
-                        p.x - bounds.first.first,
-                        p.y - bounds.second.first,
-                    )
-                    m2.s(p0, ch)
-                }
-                println(m2)
-                println()
-            }
-            //println( m.findIslands(ch).toList() )
-        }
+        val mt1 = parse(readInput("12_test"))
+        val mt2 = parse(readInput("12_test2"))
+        val mt3 = parse(readInput("12_test3"))
+        val m = parse(readInput("12"))
+
+        check(part1(mt1) == 140)
+        check(part1(mt2) == 772)
+        check(part1(mt3) == 1930)
+        println("Answer to part 1: ${part1(m)}")
     }
     println(dt)
 }

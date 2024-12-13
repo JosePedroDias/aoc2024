@@ -1,8 +1,8 @@
 import kotlin.time.measureTime
 
-private typealias Pos2 = Pair<Int, Int>
-
 private const val DOT_HEIGHT = -10
+
+private typealias Pos2 = Pair<Int, Int>
 
 private class Matrix3(lines: List<String>) {
     val w: Int = lines[0].length;

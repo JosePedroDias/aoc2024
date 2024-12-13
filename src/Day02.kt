@@ -1,39 +1,40 @@
-import kotlinx.coroutines.runBlocking
 import kotlin.math.absoluteValue
 
-fun <T> List<T>.allExcept(index: Int): List<T> {
+private fun <T> List<T>.allExcept(index: Int): List<T> {
     require(index in indices) { "Index out of bounds: $index" }
     return subList(0, index) + subList(index + 1, size)
 }
 
-fun main() {
-    fun lineToReport(line: String): List<Int> {
-        return line.split(" ").map { it.toInt() }
-    }
-    //println(lineToReport("22 44 -12 2")) // [22, 44, -12, 2]
+private fun lineToReport(line: String): List<Int> {
+    return line.split(" ").map { it.toInt() }
+}
 
-    fun sign(n: Int): Int = when {
-        n < 0 -> -1
-        n > 0 -> 1
-        else -> 0
+private fun sign(n: Int): Int = when {
+    n < 0 -> -1
+    n > 0 -> 1
+    else -> 0
+}
+
+private fun isValidReport(report: List<Int>): Boolean {
+    val pairs = report.zipWithNext()
+    val (a0, b0) = pairs.take(1)[0]
+    val diff0 = b0 - a0
+    val repSign = sign(diff0)
+    return pairs.all { (a, b) ->
+        val diff = b - a
+        if (repSign != sign(diff)) {
+            return false
+        }
+        val ad = diff.absoluteValue
+        val valid = ad in 1..3
+        valid // prefixing with return behaves differently. beware!
     }
+}
+
+fun main() {
+    //println(lineToReport("22 44 -12 2")) // [22, 44, -12, 2]
     //println("signs: ${sign(-2)}, ${sign(7)}, ${sign(0)}")
 
-    fun isValidReport(report: List<Int>): Boolean {
-        val pairs = report.zipWithNext()
-        val (a0, b0) = pairs.take(1)[0]
-        val diff0 = b0 - a0
-        val repSign = sign(diff0)
-        return pairs.all { (a, b) ->
-            val diff = b - a
-            if (repSign != sign(diff)) {
-                return false
-            }
-            val ad = diff.absoluteValue
-            val valid = ad in 1..3
-            valid // prefixing with return behaves differently. beware!
-        }
-    }
     check(isValidReport(listOf(2, 4, 7)))
     check(!isValidReport(listOf(2, 5, 9)))
     check(isValidReport(listOf(-2, -4, -7)))

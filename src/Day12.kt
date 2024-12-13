@@ -36,75 +36,9 @@ private data class Island(val s: Set<Pos3>, var ch: Char = 'O') {
         return sum
     }
 
-    // -x, +x, -y, +y
-    private fun countContinuousSegments(l: List<Pos3>, attr: (Pos3) -> Int, groupAttr: (Pos3) -> Int): Int {
-        if (l.isEmpty()) return 0
-        if (l.size == 1) return 1
-
-        var count = 0
-
-        val dims = l.groupBy { groupAttr(it) }
-
-        for (segs in dims.values) {
-            var prev: Pos3? = null
-            for (p in segs) {
-                if (prev != null) {
-                    if (attr(p) - attr(prev) != 1) {
-                        ++count
-                        prev = null
-                    } else {
-                        prev = p
-                    }
-                } else {
-                    ++count
-                    prev = p
-                }
-            }
-        }
-
-        return count
-    }
-
     val sides: Int
     get() {
-        val segmentsPerDirection: Array<MutableList<Pos3>> = arrayOf(
-            mutableListOf(),
-            mutableListOf(),
-            mutableListOf(),
-            mutableListOf(),
-        )
-        for (p in s) {
-            for ((idx, pp) in neighbors2(p)) {
-                segmentsPerDirection[idx].add(pp)
-            }
-        }
-
-        var count = 0
-
-        val xSel = fun(p: Pos3): Int { return p.x }
-        val ySel = fun(p: Pos3): Int { return p.y }
-
-        val leftSegments = segmentsPerDirection[0]
-        leftSegments.sortBy { it.y }
-        leftSegments.sortBy { it.x }
-        count += countContinuousSegments(leftSegments, ySel, xSel)
-
-        val rightSegments = segmentsPerDirection[1]
-        rightSegments.sortBy { it.y }
-        rightSegments.sortBy { it.x }
-        count += countContinuousSegments(rightSegments, ySel, xSel)
-
-        val upSegments = segmentsPerDirection[2]
-        upSegments.sortBy { it.x }
-        upSegments.sortBy { it.y }
-        count += countContinuousSegments(upSegments, xSel, ySel)
-
-        val downSegments = segmentsPerDirection[3]
-        downSegments.sortBy { it.x }
-        downSegments.sortBy { it.y }
-        count += countContinuousSegments(downSegments, xSel, ySel)
-
-        return count
+        return 0
     }
 
     val price: Int
@@ -143,6 +77,33 @@ private data class Island(val s: Set<Pos3>, var ch: Char = 'O') {
             bounds.second.last - bounds.second.first + 1,
         )
         for (p in s) {
+            val p0 = Pos3(
+                p.x - bounds.first.first,
+                p.y - bounds.second.first,
+            )
+            m.s(p0, ch)
+        }
+        return m
+    }
+
+    fun scaleMatrix(n: Int = 3): Matrix4 {
+        val bounds = getBoundary()
+        val x0 = bounds.first.last
+        val y0 = bounds.second.last
+        val w = bounds.first.last - bounds.first.first + 1
+        val h = bounds.second.last - bounds.second.first + 1
+
+        val m = Matrix4(n * w, n * h)
+        for (p in s) {
+            for (yy in 0 until n) {
+                for (xx in 0 until n) {
+                    val pp = Pos3(
+                        p.x - x0 + xx,
+                        p.y - y0 + yy,
+                    )
+                    m.s(pp, ch)
+                }
+            }
             val p0 = Pos3(
                 p.x - bounds.first.first,
                 p.y - bounds.second.first,
@@ -277,7 +238,8 @@ private fun part1(m: Matrix4, debug: Boolean = false): Int {
 private fun part2(m: Matrix4, debug: Boolean = false): Int {
     if (debug) {
         for (island in m.findIslands()) {
-            println(island.getMatrix())
+            //println(island.getMatrix())
+            println(island.scaleMatrix())
             println("area: ${island.area}")
             println("sides: ${island.sides}")
             println("discountPrice: ${island.discountPrice}")
@@ -305,7 +267,7 @@ fun main() {
         check(part1(mt3) == 1930)
         println("Answer to part 1: ${part1(m)}")
 
-        //check(part2(mt1) == 80)
+        check(part2(mt1, true) == 80)
         //check(part2(mt2) == 436)
         //check(part2(mt4) == 236)
         //check(part2(mt5) == 368)

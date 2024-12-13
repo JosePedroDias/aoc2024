@@ -1,6 +1,9 @@
 import kotlin.time.measureTime
 import kotlinx.coroutines.*
 
+private const val EMPTY = '.'
+private const val OBSTACLE = '#'
+
 private data class Pos (var x: Int, var y: Int)
 
 private enum class Dir(val x:Int, val y:Int) {
@@ -22,9 +25,6 @@ private enum class Dir(val x:Int, val y:Int) {
         return Pos(p.x + x, p.y + y)
     }
 }
-
-private const val EMPTY = '.'
-private const val OBSTACLE = '#'
 
 private fun guardCharFromDir(d: Dir): Char {
     return when(d) {
@@ -169,31 +169,31 @@ private fun walk2(m: Matrix): Boolean {
     }
 }
 
+private val cs = CoroutineScope(Dispatchers.IO)
+
+private fun part1(input: List<String>): Int {
+    val (w, h) = getDims(input)
+    val m = Matrix(w, h)
+    m.fillFromLines(input)
+    return walk(m)
+}
+
+private suspend fun part2(input: List<String>): Int {
+    val (w, h) = getDims(input)
+    val m0 = Matrix(w, h)
+    m0.fillFromLines(input)
+    val candidates = m0.allHaving(EMPTY).map {p ->
+        val m = m0.clone()
+        m.s(p, OBSTACLE)
+        m
+    }
+
+    return candidates.map { m ->
+        cs.async { walk2(m) }
+    }.awaitAll().filter { it }.size
+}
+
 suspend fun main() {
-    val cs = CoroutineScope(Dispatchers.IO)
-
-    fun part1(input: List<String>): Int {
-        val (w, h) = getDims(input)
-        val m = Matrix(w, h)
-        m.fillFromLines(input)
-        return walk(m)
-    }
-
-    suspend fun part2(input: List<String>): Int {
-        val (w, h) = getDims(input)
-        val m0 = Matrix(w, h)
-        m0.fillFromLines(input)
-        val candidates = m0.allHaving(EMPTY).map {p ->
-            val m = m0.clone()
-            m.s(p, OBSTACLE)
-            m
-        }
-
-        return candidates.map { m ->
-            cs.async { walk2(m) }
-        }.awaitAll().filter { it }.size
-    }
-
     val dt = measureTime {
         check(41 == part1(readInput("06_test")))
         println("part 1 answer: ${part1(readInput("06"))}")

@@ -1,14 +1,12 @@
-import kotlinx.coroutines.runBlocking
+private fun numbersFromLine(line: String): Pair<Int, Int> {
+    val parts = line.split("   ")
+    val leftNum = parts[0].toInt()
+    val rightNum = parts[1].toInt()
+    return Pair(leftNum, rightNum)
+}
 
 fun main() {
     // PART 1
-
-    fun numbersFromLine(line: String): Pair<Int, Int> {
-        val parts = line.split("   ")
-        val leftNum = parts[0].toInt()
-        val rightNum = parts[1].toInt()
-        return Pair(leftNum, rightNum)
-    }
     check(Pair(24, 113) == numbersFromLine("24   113"))
 
     fun part1(input: List<String>): Int {

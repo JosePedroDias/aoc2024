@@ -23,6 +23,73 @@ private fun concatOp(a: Long, b: Long): Long {
     return (10.0.pow(digitsB) * a + b).toLong()
 }
 
+private fun part1(input: List<String>): Long {
+    var total = 0L
+    for (line in input) {
+        val (a, b) = line.split(": ")
+        val target = a.toLong()
+        val nums = b.split(" ").map { it.toLong() }
+        //println("t: $target | nums: $nums")
+        val outcome = signals(nums.size - 1).any {
+            //val sb = StringBuilder()
+            var num = nums[0]
+            //sb.append(num)
+            for (i in 1..< nums.size) {
+                val isMul = it[i - 1]
+                val andNum = nums[i]
+                //sb.append( if (isMul) " * " else " + " )
+                //sb.append(andNum)
+                if (isMul) {
+                    num *= andNum
+                } else {
+                    num += andNum
+                }
+            }
+            val worked = num == target
+            //val emoji = if (worked) "✅" else "❌"
+            //println("  $target $emoji $sb ($num)")
+            worked
+        }
+        if (outcome) {
+            total += target
+        }
+    }
+    return total
+}
+
+private fun part2(input: List<String>): Long {
+    var total = 0L
+    for (line in input) {
+        val (a, b) = line.split(": ")
+        val target = a.toLong()
+        val nums = b.split(" ").map { it.toLong() }
+        //println("t: $target | nums: $nums")
+        val outcome = signalsTernary(nums.size - 1).any {
+            //val sb = StringBuilder()
+            var num = nums[0]
+            //sb.append(num)
+            for (i in 1..< nums.size) {
+                val opIdx = it[i - 1]
+                val andNum = nums[i]
+                when (opIdx) {
+                    0 -> { num += andNum; /*sb.append(" + ")*/ }
+                    1 -> { num *= andNum; /*sb.append(" * ")*/ }
+                    else -> { num = concatOp(num, andNum); /*sb.append(" || ")*/ }
+                }
+                //sb.append(andNum)
+            }
+            val worked = num == target
+            //val emoji = if (worked) "✅" else "❌"
+            //println("  $target $emoji $sb ($num)")
+            worked
+        }
+        if (outcome) {
+            total += target
+        }
+    }
+    return total
+}
+
 fun main() {
     check(concatOp(2L, 5L) == 25L)
     check(concatOp(23L, 5L) == 235L)
@@ -30,73 +97,6 @@ fun main() {
 
     //println(signals(3).toList())
     //println(signalsTernary(3).toList())
-
-    fun part1(input: List<String>): Long {
-        var total = 0L
-        for (line in input) {
-            val (a, b) = line.split(": ")
-            val target = a.toLong()
-            val nums = b.split(" ").map { it.toLong() }
-            //println("t: $target | nums: $nums")
-            val outcome = signals(nums.size - 1).any {
-                //val sb = StringBuilder()
-                var num = nums[0]
-                //sb.append(num)
-                for (i in 1..< nums.size) {
-                    val isMul = it[i - 1]
-                    val andNum = nums[i]
-                    //sb.append( if (isMul) " * " else " + " )
-                    //sb.append(andNum)
-                    if (isMul) {
-                        num *= andNum
-                    } else {
-                        num += andNum
-                    }
-                }
-                val worked = num == target
-                //val emoji = if (worked) "✅" else "❌"
-                //println("  $target $emoji $sb ($num)")
-                worked
-            }
-            if (outcome) {
-                total += target
-            }
-        }
-        return total
-    }
-
-    fun part2(input: List<String>): Long {
-        var total = 0L
-        for (line in input) {
-            val (a, b) = line.split(": ")
-            val target = a.toLong()
-            val nums = b.split(" ").map { it.toLong() }
-            //println("t: $target | nums: $nums")
-            val outcome = signalsTernary(nums.size - 1).any {
-                //val sb = StringBuilder()
-                var num = nums[0]
-                //sb.append(num)
-                for (i in 1..< nums.size) {
-                    val opIdx = it[i - 1]
-                    val andNum = nums[i]
-                    when (opIdx) {
-                        0 -> { num += andNum; /*sb.append(" + ")*/ }
-                        1 -> { num *= andNum; /*sb.append(" * ")*/ }
-                        else -> { num = concatOp(num, andNum); /*sb.append(" || ")*/ }
-                    }
-                    //sb.append(andNum)
-                }
-                val worked = num == target
-                //val emoji = if (worked) "✅" else "❌"
-                //println("  $target $emoji $sb ($num)")
-                worked
-            }
-            if (outcome) {
-                total += target
-            }
-        }
-        return total
-    }
 
     val dt = measureTime {
         check(3749L == part1(readInput("07_test")))

@@ -134,6 +134,11 @@ fun main() {
         check(part1(test) == 480)
         println("Answer to part 1: ${part1(prob)}")
 
+        val m = 10000000000000
+        val M = Int.MAX_VALUE
+        println("m: $m")
+        println("M: $M")
+
         //check(part2(prob) == 140) // TODO
         //println("Answer to part 2: ${part2(prob)}")
     }

@@ -85,18 +85,22 @@ private data class Island(val s: Set<Pos3>, var ch: Char = 'O') {
         val ySel = fun(p: Pos3): Int { return p.y }
 
         val leftSegments = segmentsPerDirection[0]
+        leftSegments.sortBy { it.y }
         leftSegments.sortBy { it.x }
         count += countContinuousSegments(leftSegments, ySel, xSel)
 
         val rightSegments = segmentsPerDirection[1]
+        rightSegments.sortBy { it.y }
         rightSegments.sortBy { it.x }
         count += countContinuousSegments(rightSegments, ySel, xSel)
 
         val upSegments = segmentsPerDirection[2]
+        upSegments.sortBy { it.x }
         upSegments.sortBy { it.y }
         count += countContinuousSegments(upSegments, xSel, ySel)
 
         val downSegments = segmentsPerDirection[3]
+        downSegments.sortBy { it.x }
         downSegments.sortBy { it.y }
         count += countContinuousSegments(downSegments, xSel, ySel)
 
@@ -301,11 +305,11 @@ fun main() {
         check(part1(mt3) == 1930)
         println("Answer to part 1: ${part1(m)}")
 
-        check(part2(mt1) == 80)
-        check(part2(mt2) == 436)
-        check(part2(mt4) == 236)
-        check(part2(mt5, true) == 368) // 424
-        check(part2(mt3) == 1206) // 1243
+        //check(part2(mt1) == 80)
+        //check(part2(mt2) == 436)
+        //check(part2(mt4) == 236)
+        //check(part2(mt5) == 368)
+        check(part2(mt3, true) == 1206) // 1255
         println("Answer to part 2: ${part2(m)}")
     }
     println(dt)

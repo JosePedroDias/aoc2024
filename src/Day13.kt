@@ -1,5 +1,31 @@
 import kotlin.time.measureTime
 
+/*
+0-100a  +   0b (100)
+0- 99a  +   1b ( 99)
+0- 90a  +  10b ( 90)
+0 -60a  +  40b ( 60)
+0 -10a  +  90b ( 10)
+0 - 1a  +  99b (  2)
+0       + 100b (  1)
+*/
+
+private fun aBUpTo(maxAmount: Int) = sequence<Pair<Int, Int>> {
+    for (aPlusB in 0..maxAmount) {
+        for (a in 0..aPlusB) {
+            yield(Pair(a, maxAmount-aPlusB))
+        }
+    }
+}
+
+private fun abTo(maxAmount: Int) = sequence<Pair<Int, Int>> {
+    for (b in 0..maxAmount) {
+        for (a in 0..maxAmount) {
+            yield(Pair(a, b))
+        }
+    }
+}
+
 private data class Pos5(var x:Int = 0, var y:Int = 0) {
     override fun toString(): String {
         return "($x, $y)"
@@ -15,6 +41,12 @@ private data class Pos5(var x:Int = 0, var y:Int = 0) {
     fun addTimes(times: Int, p:Pos5) {
         x += times * p.x
         y += times * p.y
+    }
+    override fun equals(p:Any?): Boolean {
+        if (p is Pos5) {
+            return x == p.x && y == p.y
+        }
+        return false
     }
 }
 
@@ -51,64 +83,56 @@ private fun parse(path: String): Sequence<Case> {
 }
 
 private fun part1(seq: Sequence<Case>): Int {
-    var res = 0
+    var totalCost = 0
     var caseI = 0
-    for ((a, b, p) in seq) {
-        println("** case #$caseI **")
+    for ((aVec, bVec, goalVec) in seq) {
+        println("** case #$caseI | aVec:$aVec, b:$bVec, goalVec:$goalVec **")
         ++caseI
-        var aNeededPresses: Int? = null
-        var bNeededPresses: Int? = null
-        println("a:$a, b:$b, p:$p")
 
-        for ((numAs, numBs) in combinations(100)) {
-            val claw = Pos5()
+        // aTimes, bTimes, costTokens
+        val validTrios = mutableListOf<Triple<Int, Int, Int>>()
 
+        for ((aTimes, bTimes) in abTo(MAX_BUTTON_PRESSES)) {
+            val clawPos = Pos5()
+            clawPos.addTimes(aTimes, aVec)
+            clawPos.addTimes(bTimes, bVec)
+            //println("$aTimes * $aVec + $bTimes * $bVec == $clawPos (goal: $goalVec)")
+            if (clawPos == goalVec) {
+                val cost = aTimes * BUTTON_PRESS_COST[0] + bTimes * BUTTON_PRESS_COST[1]
+                //println("-> $aTimes a, $bTimes b (cost: $cost)")
+                validTrios.add(Triple(aTimes, bTimes, cost))
+            }
         }
 
-        val clawA = Pos5()
-        for (i in 0 .. MAX_BUTTON_PRESSES) {
-            //println("#$i: $clawA")
-            if (clawA == p) { aNeededPresses = i; break }
-            clawA += a
-        }
-        println("last clawA: $clawA")
-
-        val clawB = Pos5()
-        for (i in 0 .. MAX_BUTTON_PRESSES) {
-            //println("#$i: $clawB")
-            if (clawB == p) { bNeededPresses = i; break }
-            clawB += b
-        }
-        println("last clawB: $clawB")
-
-        // TODO combinations?
-        println("aNeededPresses: $aNeededPresses, bNeededPresses: $bNeededPresses")
-        if (aNeededPresses != null && bNeededPresses != null && aNeededPresses + bNeededPresses <= MAX_BUTTON_PRESSES) {
-            val aCost = BUTTON_PRESS_COST[0] * aNeededPresses
-            val bCost = BUTTON_PRESS_COST[1] * bNeededPresses
-            val bothCost = aCost + bCost
-            println("aCost: $aCost, bCost: $bCost, bothCost: $bothCost")
-        } else if (aNeededPresses != null) {
-            val aCost = BUTTON_PRESS_COST[0] * aNeededPresses
-            println("aCost: $aCost")
-        } else if (bNeededPresses != null) {
-            val bCost = BUTTON_PRESS_COST[1] * bNeededPresses
-            println("bCost: $bCost")
+        if (validTrios.size > 0) {
+            validTrios.sortBy { it.third }
+            val (bestATimes, bestBTimes, bestCost) = validTrios[0]
+            totalCost += bestCost
+            println(">>> best: a:$bestATimes, b:$bestBTimes, cost:$bestCost of ${validTrios.size}")
         } else {
-            println("nope")
+            println(">>> no combination found!")
         }
     }
-    return res
+    return totalCost
 }
 
 fun main() {
     val dt = measureTime {
-        val test = parse("13_test") // 480
-        //val prob = parse("13")
+        //aBUpTo(3).forEach { (a, b) -> println("$a,$b") }
+        abTo(3).forEach { (a, b) -> println("$a,$b") }
 
-        //part1(test)
+        val p = Pos5()
+        p.addTimes(80, Pos5(94, 34))
+        p.addTimes(40, Pos5(22, 67))
+        val cost = 80 * BUTTON_PRESS_COST[0] + 40 * BUTTON_PRESS_COST[1]
+        check(p == Pos5(8400, 5400))
+        check(cost == 280)
+
+        val test = parse("13_test") // 480
+        val prob = parse("13")
+
         check(part1(test) == 480)
-        //println("Answer to part 1: ${part1(test)}")
+        println("Answer to part 1: ${part1(prob)}")
 
         //check(part2(prob) == 140) // TODO
         //println("Answer to part 2: ${part2(prob)}")

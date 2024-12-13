@@ -30,6 +30,20 @@ fun combinations(n: Int) = sequence {
     }
 }
 
+fun <T> permutations(list: List<T>): Sequence<List<T>> = sequence {
+    if (list.isEmpty()) {
+        yield(emptyList())
+    } else {
+        for (i in list.indices) {
+            val item = list[i]
+            val remaining = list.take(i) + list.drop(i + 1)
+            for (perm in permutations(remaining)) {
+                yield(listOf(item) + perm)
+            }
+        }
+    }
+}
+
 fun doesThrow(block: () -> Unit) {
     return try {
         block()

@@ -60,7 +60,7 @@ private data class Matrix5(val w: Int, val h: Int) {
     }
 }
 
-private val lineRgx = Regex("""p=(-?\d+,-?\d+) v=(-?\d+,-?\d+)""")
+private val lineRgx = Regex("""p=(\d+),(\d+) v=(-?\d+),(-?\d+)""")
 
 private fun parse(lines: List<String>, dims: Pair<Int, Int>): Matrix5 {
     val m = Matrix5(dims.first, dims.second)

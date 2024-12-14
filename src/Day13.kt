@@ -23,14 +23,14 @@ private fun parse(path: String): Sequence<Case> {
     val rgx2 = Regex("""Prize: X=(\d+), Y=(\d+)""")
 
     fun parseButton(line: String): Pos5 {
-        val (_, xs, xn, ys, yn) = rgx1.matchAt(line, 0)!!.groupValues
+        val (_, xs, xn, ys, yn) = rgx1.matchEntire(line)!!.groupValues
         val x = xn.toLong() * if (xs == "-") -1 else 1
         val y = yn.toLong() * if (ys == "-") -1 else 1
         return Pos5(x, y)
     }
 
     fun parsePrize(line: String): Pos5 {
-        val (_, xn, yn) = rgx2.matchAt(line, 0)!!.groupValues
+        val (_, xn, yn) = rgx2.matchEntire(line)!!.groupValues
         val x = xn.toLong()
         val y = yn.toLong()
         return Pos5(x, y)

@@ -4,7 +4,6 @@ private typealias Num = Long
 
 private val BUTTON_PRESS_COST = arrayOf(3, 1)
 private val MAX_BUTTON_PRESSES = 100
-private val MAX_BUTTON_PRESSES2 = 10000
 const val INCREMENT = 10000000000000L
 
 private data class Pos5(var x:Num = 0, var y:Num = 0) {
@@ -14,10 +13,6 @@ private data class Pos5(var x:Num = 0, var y:Num = 0) {
     fun addTimes(times: Int, p:Pos5) {
         x += times * p.x
         y += times * p.y
-    }
-    fun bump() {
-        x += INCREMENT
-        y += INCREMENT
     }
 }
 
@@ -54,7 +49,7 @@ private fun part1(seq: Sequence<Case>): Int {
     var totalCost = 0
     var caseI = 0
     for ((aVec, bVec, goalVec) in seq) {
-        println("** case #$caseI | aVec:$aVec, b:$bVec, goalVec:$goalVec **")
+        //println("** case #$caseI | aVec:$aVec, b:$bVec, goalVec:$goalVec **")
         ++caseI
 
         // aTimes, bTimes, costTokens
@@ -76,29 +71,44 @@ private fun part1(seq: Sequence<Case>): Int {
             validTrios.sortBy { it.third }
             val (bestATimes, bestBTimes, bestCost) = validTrios[0]
             totalCost += bestCost
-            println(">>> best: a:$bestATimes, b:$bestBTimes, cost:$bestCost of ${validTrios.size}")
+            //println(">>> best: a:$bestATimes, b:$bestBTimes, cost:$bestCost of ${validTrios.size}")
         } else {
-            println(">>> no combination found!")
+            //println(">>> no combination found!")
         }
     }
     return totalCost
+}
+
+/**
+ * a * A.x + b * B.x = G.x
+ * a * A.y + b * B.y = G.y
+ */
+private fun solveEqs(A: Pos5, B: Pos5, G: Pos5): Pair<Long, Long>? {
+    val bn = G.y * A.x - G.x * A.y
+    val bd = A.x * B.y - A.y * B.x
+    val b = if (bn % bd == 0L) bn / bd else return null
+    val an = G.x - b * B.x
+    val a = if (an % A.x == 0L) an / A.x else return null
+    return Pair(a, b)
 }
 
 private fun part2(seq: Sequence<Case>): Long {
     var totalCost = 0L
     var caseI = 0
     for ((aVec, bVec, goalVec) in seq) {
-        println("** case #$caseI | aVec:$aVec, b:$bVec, goalVec:$goalVec **")
+        //println("** case #$caseI | aVec:$aVec, b:$bVec, goalVec:$goalVec **")
         ++caseI
 
-        val result = solveEq(Pair(aVec.x, aVec.y), Pair(bVec.x, bVec.y), Pair(goalVec.x + INCREMENT, goalVec.y + INCREMENT))
+        goalVec.x += INCREMENT
+        goalVec.y += INCREMENT
+        val result = solveEqs(aVec, bVec, goalVec)
         if (result != null) {
             val (aTimes, bTimes) = result
-            println("FOUND: a=$aTimes, b=$bTimes")
+            //println("FOUND: a=$aTimes, b=$bTimes")
             val cost = aTimes * BUTTON_PRESS_COST[0] + bTimes * BUTTON_PRESS_COST[1]
             totalCost += cost
         } else {
-            println("NOT FOUND")
+            //println("NOT FOUND")
         }
     }
     return totalCost
@@ -113,13 +123,20 @@ fun main() {
         check(p == Pos5(8400, 5400))
         check(cost == 280)
 
+        val res = solveEqs(Pos5(94, 34), Pos5(22, 67), Pos5(8400, 5400))
+        check(res == Pair(80L, 40L))
+
+        val g1 = Pos5(8400 + INCREMENT, 5400 + INCREMENT)
+        val res2 = solveEqs(Pos5(94, 34), Pos5(22, 67), Pos5(8400 + INCREMENT, 5400 + INCREMENT))
+        //println(res2)
+        //check(res2 == Pair(80L, 40L))
+
         val test = parse("13_test") // 480
         val prob = parse("13")
 
-        //check(part1(test) == 480)
-        //println("Answer to part 1: ${part1(prob)}")
+        check(part1(test) == 480)
+        println("Answer to part 1: ${part1(prob)}")
 
-        //check(part2(prob) == 140L)
         println("Answer to part 2: ${part2(prob)}")
     }
     println(dt)

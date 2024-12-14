@@ -84,6 +84,23 @@ private data class Matrix5(val w: Int, val h: Int) {
         return answer
     }
 
+    fun spotTree():Boolean {
+        val (xr, yr) = ranges
+        for (y in yr.last/2..yr.last) {
+            var consecutive = 0
+            for (x in xr) {
+                val c = countRobotsAt(Pos6(x, y))
+                if (c > 0) {
+                    consecutive++
+                    if (consecutive > 10) return true
+                } else {
+                    consecutive = 0
+                }
+            }
+        }
+        return false
+    }
+
     fun countRobotsAt(p: Pos6): Int {
         return robots.count { it.p == p }
     }
@@ -119,12 +136,13 @@ private fun parse(lines: List<String>, dims: Pair<Int, Int>): Matrix5 {
     return m
 }
 
-private fun simulate(m: Matrix5, steps: Int = 100, showRange: IntRange = 0..-1) {
-    var t = 0
+private fun simulate(m: Matrix5, steps: Int = 100, check: Boolean = false) {
+    var t = -1
 
     fun pr() {
-        if (t in showRange) println("t=$t\n$m\n")
         ++t
+        if (!check) return
+        if (m.spotTree()) println("t=$t\n$m\n")
     }
 
     pr()
@@ -141,7 +159,6 @@ fun main() {
         p += Pos6(-1, 0); p.keepInBounds(ranges)
         check(p == Pos6(0, 1))
         p += Pos6(-1, 0); p.keepInBounds(ranges)
-        println(p)
         check(p == Pos6(3, 1))
         p += Pos6(0, 2); p.keepInBounds(ranges)
         check(p == Pos6(3, 0))
@@ -155,8 +172,7 @@ fun main() {
         println("Answer to part 1: ${m.answer()}")
 
         val m2 = parse(readInput("14"), Pair(101, 103))
-        simulate(m2)
-        simulate(m2, 300, 180..300) // 81, 82
+        simulate(m2, m2.w * m2.h, true)
     }
     println(dt)
 }

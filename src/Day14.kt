@@ -1,7 +1,5 @@
 import kotlin.time.measureTime
 
-private const val STEPS = 100
-
 // https://kotlinlang.org/docs/operator-overloading.html
 private data class Pos6(var x:Int = 0, var y:Int = 0) {
     override fun toString(): String {
@@ -79,10 +77,10 @@ private data class Matrix5(val w: Int, val h: Int) {
             }
             sum
         }
-        println("qCounts: $qCounts")
+        //println("qCounts: $qCounts")
 
         val answer = qCounts.reduce { acc, v -> acc * v }
-        println("answer: $answer")
+        //println("answer: $answer")
         return answer
     }
 
@@ -121,12 +119,18 @@ private fun parse(lines: List<String>, dims: Pair<Int, Int>): Matrix5 {
     return m
 }
 
-private fun simulate(m: Matrix5) {
+private fun simulate(m: Matrix5, steps: Int = 100, showRange: IntRange = 0..-1) {
     var t = 0
-    //println("t=${t++}\n$m\n")
-    repeat(100) {
+
+    fun pr() {
+        if (t in showRange) println("t=$t\n$m\n")
+        ++t
+    }
+
+    pr()
+    repeat(steps) {
         m.moveTick()
-        //println("t=${t++}\n$m\n")
+        pr()
     }
 }
 
@@ -149,6 +153,10 @@ fun main() {
         val m = parse(readInput("14"), Pair(101, 103))
         simulate(m)
         println("Answer to part 1: ${m.answer()}")
+
+        val m2 = parse(readInput("14"), Pair(101, 103))
+        simulate(m2)
+        simulate(m2, 300, 180..300) // 81, 82
     }
     println(dt)
 }

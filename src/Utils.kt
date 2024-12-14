@@ -10,6 +10,10 @@ fun readInput(name: String) = Path("src/$name.txt").readText().trim().lines()
 
 fun readInputAsString(name: String) = Path("src/$name.txt").readText().trim()
 
+fun extractIntegers(line: String): Sequence<MatchResult> {
+    return Regex("""-?\d+""").findAll(line)
+}
+
 /**
  * Converts string to md5 hash.
  */
@@ -72,7 +76,6 @@ fun memUsage() {
     print("Total: ${totalMemory / MB} MB, ")
     println("Max: ${maxMemory / MB} MB")
 }
-
 
 /*
 0-100a  +   0b (100)

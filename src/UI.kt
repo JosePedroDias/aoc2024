@@ -13,6 +13,10 @@ private const val H = 600
 private const val R = 50
 
 // TODO: still super janky in linux
+//
+// REFERENCE: https://github.com/jakubgwozdz/advent-of-code-2024/blob/main/aoc2024/src/main/kotlin/VideoCommon.kt
+// TODO: Atomic state
+// TODO: buffered image
 
 fun main() {
     val circleColor = Color(0, 150, 255)

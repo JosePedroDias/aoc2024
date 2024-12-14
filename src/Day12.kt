@@ -1,8 +1,27 @@
 import kotlin.time.measureTime
 
+// this way to find neighbors and perimeter is
+// heavily inspired from
+// https://github.com/jakubgwozdz/advent-of-code-2024/blob/main/aoc2024/src/main/kotlin/day12/Day12.kt
+private enum class Dir2 { U, R, D, L }
+private fun Dir2.turnRight() = Dir2.entries[(ordinal + 1) % Dir2.entries.size]
+
+private typealias PosDir = Pair<Pos3, Dir2>
+
 private data class Pos3(val x: Int, val y: Int) {
     override fun toString(): String {
         return "($x,$y)"
+    }
+
+    fun neighborsWithDir(): List<PosDir> {
+        return Dir2.entries.map { Pair(this + it, it) }
+    }
+
+    operator fun plus(d: Dir2): Pos3 = when (d) {
+        Dir2.U -> Pos3(x,     y - 1)
+        Dir2.R -> Pos3(x + 1, y)
+        Dir2.D -> Pos3(x,     y + 1)
+        Dir2.L -> Pos3(x - 1, y)
     }
 }
 
@@ -27,18 +46,37 @@ private data class Island(val s: Set<Pos3>, var ch: Char = 'O') {
     val area: Int
     get() = s.size
 
+    private fun perim(): Set<PosDir> {
+        val todo = mutableListOf<PosDir>()
+        val done = mutableSetOf<PosDir>()
+        val p0 = s.first()
+        var pd = p0.neighborsWithDir().first { s.contains(it.first) }
+        while (true) {
+            val neighs = pd.first.neighborsWithDir().filter { s.contains(it.first) }
+            for (n in neighs) { todo.add(n) }
+            if (todo.size == 0) break
+            done.add(pd)
+            pd = todo.removeFirst()
+        }
+        return done.filterNot { s.contains(it.first) }.toSet()
+    }
+
     val perimeter: Int
     get() {
-        var sum = 0
-        for (p in s) {
-            sum += 4 - neighbors(p).count()
-        }
-        return sum
+        if (s.size == 1) return 4
+        return perim().size
+    }
+
+    private fun sid(): Set<PosDir> {
+        return perim().filterNot { (pos, dir) ->
+            s.contains(pos + dir.turnRight())
+        }.toSet()
     }
 
     val sides: Int
     get() {
-        return 0
+        if (s.size == 1) return 4
+        return sid().size
     }
 
     val price: Int
@@ -47,29 +85,6 @@ private data class Island(val s: Set<Pos3>, var ch: Char = 'O') {
     val discountPrice: Int
         get() = area * sides
 
-    private fun neighbors(p: Pos3) = sequence {
-        listOf(
-            Pos3(p.x - 1, p.y),
-            Pos3(p.x + 1, p.y),
-            Pos3(p.x, p.y - 1),
-            Pos3(p.x, p.y + 1),
-        ).filter { s.contains(it) }
-            .forEach { yield(it) }
-    }
-
-    private fun neighbors2(p: Pos3) = sequence {
-        listOf(
-            Pos3(p.x - 1, p.y), // 0: -x
-            Pos3(p.x + 1, p.y), // 1: +x
-            Pos3(p.x, p.y - 1), // 2: -y
-            Pos3(p.x, p.y + 1), // 3: +y
-        ).forEachIndexed { idx, pp ->
-            if (!s.contains(pp)) {
-                yield(Pair(idx, pp))
-            }
-        }
-    }
-
     fun getMatrix(): Matrix4 {
         val bounds = getBoundary()
         val m = Matrix4(
@@ -77,33 +92,6 @@ private data class Island(val s: Set<Pos3>, var ch: Char = 'O') {
             bounds.second.last - bounds.second.first + 1,
         )
         for (p in s) {
-            val p0 = Pos3(
-                p.x - bounds.first.first,
-                p.y - bounds.second.first,
-            )
-            m.s(p0, ch)
-        }
-        return m
-    }
-
-    fun scaleMatrix(n: Int = 3): Matrix4 {
-        val bounds = getBoundary()
-        val x0 = bounds.first.last
-        val y0 = bounds.second.last
-        val w = bounds.first.last - bounds.first.first + 1
-        val h = bounds.second.last - bounds.second.first + 1
-
-        val m = Matrix4(n * w, n * h)
-        for (p in s) {
-            for (yy in 0 until n) {
-                for (xx in 0 until n) {
-                    val pp = Pos3(
-                        p.x - x0 + xx,
-                        p.y - y0 + yy,
-                    )
-                    m.s(pp, ch)
-                }
-            }
             val p0 = Pos3(
                 p.x - bounds.first.first,
                 p.y - bounds.second.first,
@@ -124,7 +112,7 @@ private data class Matrix4(val w: Int, val h: Int) {
         m[p] = ch
         var l = m2[ch]
         if (l == null) {
-            l = mutableListOf<Pos3>()
+            l = mutableListOf()
             m2[ch] = l
         }
         l.add(p)
@@ -239,7 +227,6 @@ private fun part2(m: Matrix4, debug: Boolean = false): Int {
     if (debug) {
         for (island in m.findIslands()) {
             //println(island.getMatrix())
-            println(island.scaleMatrix())
             println("area: ${island.area}")
             println("sides: ${island.sides}")
             println("discountPrice: ${island.discountPrice}")
@@ -268,9 +255,9 @@ fun main() {
         println("Answer to part 1: ${part1(m)}")
 
         check(part2(mt1, true) == 80)
-        //check(part2(mt2) == 436)
-        //check(part2(mt4) == 236)
-        //check(part2(mt5) == 368)
+        check(part2(mt2) == 436)
+        check(part2(mt4) == 236)
+        check(part2(mt5) == 368)
         check(part2(mt3, true) == 1206) // 1255
         println("Answer to part 2: ${part2(m)}")
     }

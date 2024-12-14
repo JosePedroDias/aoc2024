@@ -84,6 +84,26 @@ private fun part1(seq: Sequence<Case>): Int {
     return totalCost
 }
 
+private fun part2(seq: Sequence<Case>): Long {
+    var totalCost = 0L
+    var caseI = 0
+    for ((aVec, bVec, goalVec) in seq) {
+        println("** case #$caseI | aVec:$aVec, b:$bVec, goalVec:$goalVec **")
+        ++caseI
+
+        val result = solveEq(Pair(aVec.x, aVec.y), Pair(bVec.x, bVec.y), Pair(goalVec.x + INCREMENT, goalVec.y + INCREMENT))
+        if (result != null) {
+            val (aTimes, bTimes) = result
+            println("FOUND: a=$aTimes, b=$bTimes")
+            val cost = aTimes * BUTTON_PRESS_COST[0] + bTimes * BUTTON_PRESS_COST[1]
+            totalCost += cost
+        } else {
+            println("NOT FOUND")
+        }
+    }
+    return totalCost
+}
+
 fun main() {
     val dt = measureTime {
         val p = Pos5()
@@ -96,11 +116,11 @@ fun main() {
         val test = parse("13_test") // 480
         val prob = parse("13")
 
-        check(part1(test) == 480)
-        println("Answer to part 1: ${part1(prob)}")
+        //check(part1(test) == 480)
+        //println("Answer to part 1: ${part1(prob)}")
 
-        //check(part2(prob) == 140)
-        //println("Answer to part 2: ${part2(prob)}")
+        //check(part2(prob) == 140L)
+        println("Answer to part 2: ${part2(prob)}")
     }
     println(dt)
 }

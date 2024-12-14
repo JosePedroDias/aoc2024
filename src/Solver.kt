@@ -25,12 +25,12 @@ fun solveEq(
 
         val c1 = ctx.mkEq(ctx.mkAdd(ctx.mkMul(a, v1x), ctx.mkMul(b, v2x)), goalX)
         val c2 = ctx.mkEq(ctx.mkAdd(ctx.mkMul(a, v1y), ctx.mkMul(b, v2y)), goalY)
-        val c3 = ctx.mkGe(a, ctx.mkInt(0))
-        val c4 = ctx.mkGe(b, ctx.mkInt(0))
+        //val c3 = ctx.mkGe(a, ctx.mkInt(0))
+        //val c4 = ctx.mkGe(b, ctx.mkInt(0))
 
         // solver setup
         val solver = ctx.mkSolver()
-        solver.add(c1, c2, c3, c4)
+        solver.add(c1, c2)//, c3, c4)
 
         // check satisfiability
         return if (solver.check() == Status.SATISFIABLE) {

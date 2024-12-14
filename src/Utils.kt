@@ -72,3 +72,29 @@ fun memUsage() {
     print("Total: ${totalMemory / MB} MB, ")
     println("Max: ${maxMemory / MB} MB")
 }
+
+
+/*
+0-100a  +   0b (100)
+0- 99a  +   1b ( 99)
+0- 90a  +  10b ( 90)
+0 -60a  +  40b ( 60)
+0 -10a  +  90b ( 10)
+0 - 1a  +  99b (  2)
+0       + 100b (  1)
+*/
+fun aBUpTo(maxAmount: Int) = sequence {
+    for (aPlusB in 0..maxAmount) {
+        for (a in 0..aPlusB) {
+            yield(Pair(a, maxAmount-aPlusB))
+        }
+    }
+}
+
+fun abTo(maxAmount: Int) = sequence {
+    for (b in 0..maxAmount) {
+        for (a in 0..maxAmount) {
+            yield(Pair(a, b))
+        }
+    }
+}

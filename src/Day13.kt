@@ -1,59 +1,27 @@
 import kotlin.time.measureTime
 
-/*
-0-100a  +   0b (100)
-0- 99a  +   1b ( 99)
-0- 90a  +  10b ( 90)
-0 -60a  +  40b ( 60)
-0 -10a  +  90b ( 10)
-0 - 1a  +  99b (  2)
-0       + 100b (  1)
-*/
+private typealias Num = Long
 
-private fun aBUpTo(maxAmount: Int) = sequence<Pair<Int, Int>> {
-    for (aPlusB in 0..maxAmount) {
-        for (a in 0..aPlusB) {
-            yield(Pair(a, maxAmount-aPlusB))
-        }
-    }
-}
+private val BUTTON_PRESS_COST = arrayOf(3, 1)
+private val MAX_BUTTON_PRESSES = 100
+private val MAX_BUTTON_PRESSES2 = 10000
+const val INCREMENT = 10000000000000L
 
-private fun abTo(maxAmount: Int) = sequence<Pair<Int, Int>> {
-    for (b in 0..maxAmount) {
-        for (a in 0..maxAmount) {
-            yield(Pair(a, b))
-        }
-    }
-}
-
-private data class Pos5(var x:Int = 0, var y:Int = 0) {
+private data class Pos5(var x:Num = 0, var y:Num = 0) {
     override fun toString(): String {
         return "($x, $y)"
-    }
-    operator fun plus(p:Pos5) {
-        x += p.x
-        y += p.y
-    }
-    operator fun plusAssign(p:Pos5) {
-        x += p.x
-        y += p.y
     }
     fun addTimes(times: Int, p:Pos5) {
         x += times * p.x
         y += times * p.y
     }
-    override fun equals(p:Any?): Boolean {
-        if (p is Pos5) {
-            return x == p.x && y == p.y
-        }
-        return false
+    fun bump() {
+        x += INCREMENT
+        y += INCREMENT
     }
 }
 
 private typealias Case = List<Pos5>
-
-private val BUTTON_PRESS_COST = arrayOf(3, 1)
-private val MAX_BUTTON_PRESSES = 100
 
 private fun parse(path: String): Sequence<Case> {
     val rgx1 = Regex("""Button .: X([+-])(\d+), Y([+-])(\d+)""")
@@ -61,15 +29,15 @@ private fun parse(path: String): Sequence<Case> {
 
     fun parseButton(line: String): Pos5 {
         val (_, xs, xn, ys, yn) = rgx1.matchAt(line, 0)!!.groupValues
-        val x = xn.toInt() * if (xs == "-") -1 else 1
-        val y = yn.toInt() * if (ys == "-") -1 else 1
+        val x = xn.toLong() * if (xs == "-") -1 else 1
+        val y = yn.toLong() * if (ys == "-") -1 else 1
         return Pos5(x, y)
     }
 
     fun parsePrize(line: String): Pos5 {
         val (_, xn, yn) = rgx2.matchAt(line, 0)!!.groupValues
-        val x = xn.toInt()
-        val y = yn.toInt()
+        val x = xn.toLong()
+        val y = yn.toLong()
         return Pos5(x, y)
     }
 
@@ -118,9 +86,6 @@ private fun part1(seq: Sequence<Case>): Int {
 
 fun main() {
     val dt = measureTime {
-        //aBUpTo(3).forEach { (a, b) -> println("$a,$b") }
-        abTo(3).forEach { (a, b) -> println("$a,$b") }
-
         val p = Pos5()
         p.addTimes(80, Pos5(94, 34))
         p.addTimes(40, Pos5(22, 67))
@@ -134,12 +99,7 @@ fun main() {
         check(part1(test) == 480)
         println("Answer to part 1: ${part1(prob)}")
 
-        val m = 10000000000000
-        val M = Int.MAX_VALUE
-        println("m: $m")
-        println("M: $M")
-
-        //check(part2(prob) == 140) // TODO
+        //check(part2(prob) == 140)
         //println("Answer to part 2: ${part2(prob)}")
     }
     println(dt)

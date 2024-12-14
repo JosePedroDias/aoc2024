@@ -1,5 +1,7 @@
 buildscript {
     repositories {
+        //mavenCentral()
+        //maven("https://mvnrepository.com/artifact/com.microsoft.z3/javaAPI")
         gradlePluginPortal()
     }
     dependencies {
@@ -33,4 +35,5 @@ kotlin {
 
 dependencies {
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.8.1")
+    implementation("tools.aqua:z3-turnkey:4.13.0.1")
 }

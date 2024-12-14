@@ -195,10 +195,10 @@ private suspend fun part2(input: List<String>): Int {
 
 suspend fun main() {
     val dt = measureTime {
-        check(41 == part1(readInput("06_test")))
+        check(41 == part1(readInput("06t1")))
         println("part 1 answer: ${part1(readInput("06"))}")
 
-        check(6 == part2(readInput("06_test")))
+        check(6 == part2(readInput("06t1")))
         println("part 2 answer: ${part2(readInput("06"))}")
     }
     println(dt) // 4.6s to 1.1s after parallelism kicks in

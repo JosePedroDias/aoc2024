@@ -28,7 +28,7 @@ fun main() {
         }
         return diff
     }
-    check(11 == part1(readInput("01_test")))
+    check(11 == part1(readInput("01t1")))
     println("part 1 answer: ${part1(readInput("01"))}")
 
     fun part2(input: List<String>): Int {
@@ -49,6 +49,6 @@ fun main() {
         }
         return res
     }
-    check(31 == part2(readInput("01_test")))
+    check(31 == part2(readInput("01t1")))
     println("part 2 answer: ${part2(readInput("01"))}")
 }

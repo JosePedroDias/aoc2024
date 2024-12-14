@@ -113,7 +113,7 @@ fun main() {
 
         check(22L == blinkNTimes("125 17", 6))
 
-        check(55312L == blinkNTimes(readInputAsString("11_test"), 25))
+        check(55312L == blinkNTimes(readInputAsString("11t1"), 25))
 
         println("part 1 answer: ${blinkNTimes(readInputAsString("11"), 25)}")
         println("part 2 answer: ${blinkNTimes(readInputAsString("11"), 75)}")

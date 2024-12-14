@@ -60,9 +60,9 @@ fun main() {
         check(m.groupValues[0] == "don't()")
     }
 
-    check(161 == part1(readInput("03_test")))
+    check(161 == part1(readInput("03t1")))
     println("part 1 answer: ${part1(readInput("03"))}")
 
-    check(48 == part2(readInput("03_test2")))
+    check(48 == part2(readInput("03t2")))
     println("part 2 answer: ${part2(readInput("03"))}")
 }

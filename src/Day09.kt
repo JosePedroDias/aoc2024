@@ -148,7 +148,7 @@ private fun checksum(disk: Disk): Long {
 
 fun main() {
     val dt = measureTime {
-        val sT1 = readInputAsString("09_test")
+        val sT1 = readInputAsString("09t1")
         val dT1 = toDisk(sT1)
         val dT1S = diskToString(dT1)
         //println(dT1S)

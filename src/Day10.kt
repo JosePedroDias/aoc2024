@@ -139,13 +139,13 @@ private fun part2(lines: List<String>): Int {
 
 fun main() {
     val dt = measureTime {
-        //check(4 == part1(readInput("10_test1")))
-        //check(3 == part1(readInput("10_test2")))
-        check(36 == part1(readInput("10_test")))
+        //check(4 == part1(readInput("10t2")))
+        //check(3 == part1(readInput("10t3")))
+        check(36 == part1(readInput("10t1")))
         println("part 1 answer: ${part1(readInput("10"))}")
 
-        //check(3 == part2(readInput("10_test3")))
-        check(81 == part2(readInput("10_test")))
+        //check(3 == part2(readInput("10t4")))
+        check(81 == part2(readInput("10t1")))
         println("part 2 answer: ${part2(readInput("10"))}")
     }
     println(dt)

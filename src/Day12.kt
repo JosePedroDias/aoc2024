@@ -255,11 +255,11 @@ private fun part2(m: Matrix4, debug: Boolean = false): Int {
 
 fun main() {
     val dt = measureTime {
-        val mt1 = parse(readInput("12_test"))
-        val mt2 = parse(readInput("12_test2"))
-        val mt3 = parse(readInput("12_test3"))
-        val mt4 = parse(readInput("12_test4"))
-        val mt5 = parse(readInput("12_test5"))
+        val mt1 = parse(readInput("12t1"))
+        val mt2 = parse(readInput("12t2"))
+        val mt3 = parse(readInput("12t3"))
+        val mt4 = parse(readInput("12t4"))
+        val mt5 = parse(readInput("12t5"))
         val m = parse(readInput("12"))
 
         check(part1(mt1) == 140)

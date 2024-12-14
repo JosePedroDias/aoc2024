@@ -145,9 +145,9 @@ private fun part1(input: List<String>, debug: Boolean): Int {
 }
 
 fun main() {
-    check(18 == part1(readInput("04_test"), false))
+    check(18 == part1(readInput("04t1"), false))
     println("part 1 answer: ${part1(readInput("04"), false)}")
 
-    check(9 == part2(readInput("04_test"), false))
+    check(9 == part2(readInput("04t1"), false))
     println("part 2 answer: ${part2(readInput("04"), false)}")
 }

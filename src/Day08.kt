@@ -176,11 +176,11 @@ fun main() {
         //part0(readInput("08"))
 
         //check(2 == part1(readInput("08_test2")))
-        check(14 == part1(readInput("08_test")))
+        check(14 == part1(readInput("08t1")))
         println("part 1 answer: ${part1(readInput("08"))}")
 
         //check(9 == part2(readInput("08_test3")))
-        check(34 == part2(readInput("08_test")))
+        check(34 == part2(readInput("08t1")))
         println("part 2 answer: ${part2(readInput("08"))}")
     }
     println(dt)

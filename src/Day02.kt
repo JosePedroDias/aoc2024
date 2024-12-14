@@ -44,7 +44,7 @@ fun main() {
         val reports = input.map { lineToReport(it) }
         return reports.count { isValidReport(it) }
     }
-    check(2 == part1(readInput("02_test")))
+    check(2 == part1(readInput("02t1")))
     println("part 1 answer: ${part1(readInput("02"))}")
 
     fun combinationsRemovingOne(el: List<Int>): Sequence <List<Int>> = sequence {
@@ -64,6 +64,6 @@ fun main() {
         val reports = input.map { lineToReport(it) }
         return reports.count { isValidReportWithDampener(it) }
     }
-    check(4 == part2(readInput("02_test")))
+    check(4 == part2(readInput("02t1")))
     println("part 2 answer: ${part2(readInput("02"))}")
 }

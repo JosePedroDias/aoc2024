@@ -99,10 +99,10 @@ fun main() {
     //println(signalsTernary(3).toList())
 
     val dt = measureTime {
-        check(3749L == part1(readInput("07_test")))
+        check(3749L == part1(readInput("07t1")))
         println("part 1 answer: ${part1(readInput("07"))}")
 
-        check(11387L == part2(readInput("07_test")))
+        check(11387L == part2(readInput("07t1")))
         println("part 2 answer: ${part2(readInput("07"))}")
     }
     println(dt) // 4.6s to 1.1s after parallelism kicks in

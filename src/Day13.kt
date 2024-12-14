@@ -131,7 +131,7 @@ fun main() {
         //println(res2)
         //check(res2 == Pair(80L, 40L))
 
-        val test = parse("13_test") // 480
+        val test = parse("13t1") // 480
         val prob = parse("13")
 
         check(part1(test) == 480)

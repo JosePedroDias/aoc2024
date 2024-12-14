@@ -79,9 +79,9 @@ private fun part2(input: List<String>): Int {
 }
 
 fun main() {
-    check(143 == part1(readInput("05_test")))
+    check(143 == part1(readInput("05t1")))
     println("part 1 answer: ${part1(readInput("05"))}")
 
-    check(123 == part2(readInput("05_test"))) // 4633, 4979: too low | 6498: too high
+    check(123 == part2(readInput("05t1"))) // 4633, 4979: too low | 6498: too high
     println("part 2 answer: ${part2(readInput("05"))}")
 }

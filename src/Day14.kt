@@ -84,6 +84,16 @@ private fun simulate(m: Matrix5) {
 
 fun main() {
     val dt = measureTime {
+        val ranges = arrayOf(0..< 4, 0..< 3)
+        val p = Pos6(1, 1)
+        p += Pos6(-1, 0); p.keepInBounds(ranges)
+        check(p == Pos6(0, 1))
+        p += Pos6(-1, 0); p.keepInBounds(ranges)
+        println(p)
+        check(p == Pos6(3, 1))
+        p += Pos6(0, 2); p.keepInBounds(ranges)
+        check(p == Pos6(3, 0))
+
         val mt = parse(readInput("14t1"), Pair(11, 7))
         simulate(mt)
 

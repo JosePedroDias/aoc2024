@@ -5,9 +5,11 @@ private const val WALL = '#'
 private const val BOX = 'O'
 private const val EMPTY = '.'
 
-private fun parse(lines: List<String>): Triple<Matrix6, List<Dir3>, Pos4> {
+private typealias State = Triple<Matrix6, MutableList<Dir3>, Pos4>
+
+private fun parse(lines: List<String>): State {
     var inMoves = false
-    var m = Matrix6()
+    val m = Matrix6()
     val moves = mutableListOf<Dir3>()
     lines.forEachIndexed { y, l ->
         if (l.isEmpty()) {
@@ -113,6 +115,14 @@ private class Matrix6 {
         return null
     }
 
+    fun findAll(chTarget: Char) = sequence {
+        for ((p, ch) in m.entries) {
+            if (ch == chTarget) {
+                yield(p)
+            }
+        }
+    }
+
     override fun toString(): String {
         val sb = StringBuilder()
         for (y in ranges[1]) {
@@ -123,12 +133,41 @@ private class Matrix6 {
         }
         return sb.toString()
     }
+
+    fun toStringWithRobot(p: Pos4): String {
+        m[p] = ROBOT
+        val s = toString()
+        m[p] = EMPTY
+        return s
+    }
+}
+
+private fun toGps(p: Pos4): Int {
+    return p.x + 100 * p.y
+}
+
+private fun part1(st: State): Int {
+    val (m, moves, p) = st
+    //println(m)
+    //println(moves)
+    //println(p)
+
+    println(m.toStringWithRobot(p))
+
+    var sum = 0
+    for (pB in m.findAll(BOX)) {
+        sum += toGps(pB)
+    }
+
+    return sum
 }
 
 fun main() {
     val dt = measureTime {
-        val mt1 = parse(readInput("15t1"))
-        println(mt1)
+        val st1 = parse(readInput("15t1"))
+        val res1 = part1(st1)
+        println(res1)
+        //check(res1 == 0)
     }
     println(dt)
 }

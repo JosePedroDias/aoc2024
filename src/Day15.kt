@@ -5,7 +5,7 @@ private const val WALL = '#'
 private const val BOX = 'O'
 private const val EMPTY = '.'
 
-private typealias State = Triple<Matrix6, MutableList<Dir3>, Pos4>
+private typealias State = Triple<Matrix6, List<Dir3>, Pos4>
 
 private fun parse(lines: List<String>): State {
     var inMoves = false
@@ -55,8 +55,8 @@ private data class Pos4(var x: Int, var y: Int) {
         }
     }
 
-    fun move(d: Dir3) {
-        when (d) {
+    fun move(d: Dir3): Pos4 {
+        return when (d) {
             Dir3.U -> Pos4(x, y - 1)
             Dir3.R -> Pos4(x + 1, y)
             Dir3.D -> Pos4(x, y + 1)
@@ -153,7 +153,43 @@ private fun part1(st: State): Int {
     //println(p)
 
     println(m.toStringWithRobot(p))
+    for (d in moves) {
+        // robot -> empty              move robot
+        // robot -> box+ -> empty      move robot and boxes
+        // robot -> wall               no op
+        // robot -> box+ -> wall       no op
+        var isNoop = false
+        val positionsToMove = mutableListOf<Pos4>()
+        var pt = p.move(d)
 
+        while (true) {
+            var vt = m[pt]
+            if (vt == EMPTY) break
+            if (vt == WALL) {
+                isNoop = true
+                break
+            }
+            if (vt == BOX) {
+                positionsToMove.add(pt)
+            } else {
+                throw Error("unexpected")
+            }
+            pt = pt.move(d)
+        }
+
+        if (isNoop) {
+            println("$d -> stuck: noop")
+        } else {
+            if (positionsToMove.size > 0) println("$d -> move robot and ${positionsToMove.size} boxes")
+            else println("$d -> move robot")
+            p += d
+            for (pb in positionsToMove) { m[pb] = EMPTY }
+            positionsToMove.map { it.move(d) } .forEach { m[it] = BOX }
+        }
+        println(m.toStringWithRobot(p))
+    }
+
+    println("done all moves")
     var sum = 0
     for (pB in m.findAll(BOX)) {
         sum += toGps(pB)

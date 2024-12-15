@@ -1,5 +1,12 @@
 import kotlin.time.measureTime
 
+/*
+   robot -> empty              move robot
+   robot -> box+ -> empty      move robot and boxes
+   robot -> wall               no op
+   robot -> box+ -> wall       no op
+*/
+
 private const val ROBOT = '@'
 private const val WALL = '#'
 private const val BOX = 'O'
@@ -16,9 +23,7 @@ private fun parse(lines: List<String>): State {
             m.updateBounds()
             inMoves = true
         } else if (!inMoves) {
-            l.forEachIndexed { x, ch ->
-                m[Pos4(x, y)] = ch
-            }
+            l.forEachIndexed { x, ch -> m[Pos4(x, y)] = ch }
         } else {
             val chars = l.toCharArray().map { ch ->
                 when(ch) {
@@ -38,8 +43,6 @@ private fun parse(lines: List<String>): State {
 }
 
 private enum class Dir3 { U, R, D, L }
-//private fun Dir3.turnRight() = Dir3.entries[(ordinal + 1) % Dir3.entries.size]
-//private fun Dir3.turnLeft() = Dir3.entries[(ordinal - 1 + Dir3.entries.size) % Dir3.entries.size]
 
 private data class Pos4(var x: Int, var y: Int) {
     override fun toString(): String {
@@ -96,16 +99,6 @@ private class Matrix6 {
         return p.x in ranges[0] && p.y in ranges[1]
     }
 
-    private fun neighbors(p: Pos4) = sequence {
-        listOf(
-            Pos4(p.x - 1, p.y),
-            Pos4(p.x + 1, p.y),
-            Pos4(p.x, p.y - 1),
-            Pos4(p.x, p.y + 1),
-        ).filter { inBounds(it) }
-            .forEach { yield(it) }
-    }
-
     fun find(chTarget: Char): Pos4? {
         for ((p, ch) in m.entries) {
             if (ch == chTarget) {
@@ -126,9 +119,7 @@ private class Matrix6 {
     override fun toString(): String {
         val sb = StringBuilder()
         for (y in ranges[1]) {
-            for (x in ranges[0]) {
-                sb.append(this[Pos4(x, y)])
-            }
+            for (x in ranges[0]) { sb.append(this[Pos4(x, y)]) }
             sb.append('\n')
         }
         return sb.toString()
@@ -148,25 +139,19 @@ private fun toGps(p: Pos4): Int {
 
 private fun part1(st: State, debug: Boolean = false): Int {
     val (m, moves, p) = st
-
     if (debug) println(m.toStringWithRobot(p))
     for (d in moves) {
-        // robot -> empty              move robot
-        // robot -> box+ -> empty      move robot and boxes
-        // robot -> wall               no op
-        // robot -> box+ -> wall       no op
         var isNoop = false
         val positionsToMove = mutableListOf<Pos4>()
         var pt = p.move(d)
+
         while (true) {
-            var vt = m[pt]
-            if (vt == EMPTY) break
-            if (vt == WALL) {
-                isNoop = true
-                break
+            when (m[pt]) {
+                EMPTY -> break
+                WALL -> { isNoop = true; break }
+                BOX -> positionsToMove.add(pt)
+                else -> throw Error("unexpected")
             }
-            if (vt == BOX) positionsToMove.add(pt)
-            else throw Error("unexpected")
             pt = pt.move(d)
         }
 
@@ -174,8 +159,8 @@ private fun part1(st: State, debug: Boolean = false): Int {
             if (debug) println("$d -> stuck: noop")
         } else {
             if (debug) {
-                if (positionsToMove.size > 0) println("$d -> move robot and ${positionsToMove.size} boxes")
-                else println("$d -> move robot")
+                if (positionsToMove.size > 0) println("$d -> robot drags ${positionsToMove.size} boxes")
+                else println("$d -> robot moves")
             }
             p += d
             for (pb in positionsToMove) { m[pb] = EMPTY }

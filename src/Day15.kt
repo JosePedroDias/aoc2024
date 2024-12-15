@@ -146,13 +146,10 @@ private fun toGps(p: Pos4): Int {
     return p.x + 100 * p.y
 }
 
-private fun part1(st: State): Int {
+private fun part1(st: State, debug: Boolean = false): Int {
     val (m, moves, p) = st
-    //println(m)
-    //println(moves)
-    //println(p)
 
-    println(m.toStringWithRobot(p))
+    if (debug) println(m.toStringWithRobot(p))
     for (d in moves) {
         // robot -> empty              move robot
         // robot -> box+ -> empty      move robot and boxes
@@ -161,7 +158,6 @@ private fun part1(st: State): Int {
         var isNoop = false
         val positionsToMove = mutableListOf<Pos4>()
         var pt = p.move(d)
-
         while (true) {
             var vt = m[pt]
             if (vt == EMPTY) break
@@ -169,41 +165,44 @@ private fun part1(st: State): Int {
                 isNoop = true
                 break
             }
-            if (vt == BOX) {
-                positionsToMove.add(pt)
-            } else {
-                throw Error("unexpected")
-            }
+            if (vt == BOX) positionsToMove.add(pt)
+            else throw Error("unexpected")
             pt = pt.move(d)
         }
 
         if (isNoop) {
-            println("$d -> stuck: noop")
+            if (debug) println("$d -> stuck: noop")
         } else {
-            if (positionsToMove.size > 0) println("$d -> move robot and ${positionsToMove.size} boxes")
-            else println("$d -> move robot")
+            if (debug) {
+                if (positionsToMove.size > 0) println("$d -> move robot and ${positionsToMove.size} boxes")
+                else println("$d -> move robot")
+            }
             p += d
             for (pb in positionsToMove) { m[pb] = EMPTY }
             positionsToMove.map { it.move(d) } .forEach { m[it] = BOX }
         }
-        println(m.toStringWithRobot(p))
+        if (debug) println(m.toStringWithRobot(p))
     }
 
-    println("done all moves")
     var sum = 0
-    for (pB in m.findAll(BOX)) {
-        sum += toGps(pB)
-    }
-
+    for (pB in m.findAll(BOX)) { sum += toGps(pB) }
+    println("sum: $sum")
     return sum
 }
 
 fun main() {
     val dt = measureTime {
+        val st2 = parse(readInput("15t2"))
+        val res2 = part1(st2)
+        check(res2 == 2028)
+
         val st1 = parse(readInput("15t1"))
-        val res1 = part1(st1)
-        println(res1)
-        //check(res1 == 0)
+        val res1 = part1(st1, true)
+        check(res1 == 10092)
+
+        val s = parse(readInput("15"))
+        val resp1 = part1(s)
+        println("Answer to part 1: $resp1")
     }
     println(dt)
 }

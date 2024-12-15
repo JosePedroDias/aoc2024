@@ -1,33 +1,128 @@
 import kotlin.time.measureTime
 
+/*
+the perimeter of an island is any cell of that island which has
+less than the 4 cardinal direction neighbors
+
+the number of sides of an island is equal to the number of corners
+it has, ie, the number of turns one has to do over the perimeter,
+granted one the left (or right) vacant while moving forward, turning right each time
+that's not possible, stopping once we loop back to the initial position/direction.
+*/
+
+private enum class Dir2 { U, R, D, L }
+private fun Dir2.turnRight() = Dir2.entries[(ordinal + 1) % Dir2.entries.size]
+private fun Dir2.turnLeft() = Dir2.entries[(ordinal - 1 + Dir2.entries.size) % Dir2.entries.size]
+
+private typealias PosDir = Pair<Pos3, Dir2>
+
+private data class Cursor(val members: Set<Pos3>) {
+    var pos: Pos3
+    var dir: Dir2
+    init {
+        pos = members.find { isSideCell(it) }!!
+        dir = Dir2.U
+        while (true) {
+            if (!canMoveForward(pos, dir.turnLeft())) { break }
+            dir = dir.turnLeft()
+        }
+    }
+
+    fun moveForward(p: Pos3, d: Dir2): Pos3 = when (d) {
+        Dir2.U -> Pos3(p.x,     p.y - 1)
+        Dir2.R -> Pos3(p.x + 1, p.y)
+        Dir2.D -> Pos3(p.x,     p.y + 1)
+        Dir2.L -> Pos3(p.x - 1, p.y)
+    }
+
+    fun canMoveForward(p: Pos3, d: Dir2): Boolean {
+        return members.contains(moveForward(p, d))
+    }
+
+    fun get4Neighbors(p: Pos3): List<Pos3> {
+        return listOf(
+            Pos3(p.x,     p.y - 1),
+            Pos3(p.x + 1, p.y),
+            Pos3(p.x,     p.y + 1),
+            Pos3(p.x - 1, p.y),
+        ).filter { members.contains(it) }
+    }
+
+    fun get4NeighborsPairs(p: Pos3): List<PosDir> {
+        return listOf(
+            Pair(Pos3(p.x,     p.y - 1), Dir2.U),
+            Pair(Pos3(p.x + 1, p.y), Dir2.R),
+            Pair(Pos3(p.x,     p.y + 1) , Dir2.D),
+            Pair(Pos3(p.x - 1, p.y), Dir2.L),
+        ).filter { !members.contains(it.first) }
+    }
+
+    fun get8Neighbors(p: Pos3): List<Pos3> {
+        return listOf(
+            Pos3(p.x - 1, p.y - 1),
+            Pos3(p.x,        p.y - 1),
+            Pos3(p.x + 1, p.y - 1),
+            Pos3(p.x - 1, p.y),
+            Pos3(p.x + 1, p.y),
+            Pos3(p.x - 1, p.y + 1),
+            Pos3(p.x,        p.y + 1),
+            Pos3(p.x + 1, p.y + 1),
+        ).filter { members.contains(it) }
+    }
+
+    fun isPerimeterCell(p: Pos3): Boolean {
+        return get8Neighbors(p).count() < 8
+    }
+
+    fun isSideCell(p: Pos3): Boolean {
+        return get4Neighbors(p).count() < 4
+    }
+
+    fun getPerimeterCellPairs(): List<PosDir> {
+        return members
+            .filter { isPerimeterCell(it) }
+            .flatMap { p -> get4NeighborsPairs(p) }
+    }
+
+    fun getSideCount(): Int {
+        val found = mutableListOf<PosDir>(Pair(pos, dir))
+        while (true) {
+            if (canMoveForward(pos, dir)) {
+                pos = moveForward(pos, dir)
+                if (found.contains(Pair(pos, dir))) break
+                found.add(Pair(pos, dir))
+            } else {
+                dir = dir.turnRight()
+                if (found.contains(Pair(pos, dir))) break
+                found.add(Pair(pos, dir))
+            }
+        }
+
+        val dirs = found.map { it.second }.toMutableList()
+        dirs.add(found.first().second)
+        val sideCount = dirs.zipWithNext().fold(0) {
+            acc, (a, b) -> if (a != b) acc + 1 else acc
+        }
+        return sideCount
+    }
+}
+
+
 // this way to find neighbors and perimeter is
 // heavily inspired from
 // https://github.com/jakubgwozdz/advent-of-code-2024/blob/main/aoc2024/src/main/kotlin/day12/Day12.kt
-private enum class Dir2 { U, R, D, L }
-private fun Dir2.turnRight() = Dir2.entries[(ordinal + 1) % Dir2.entries.size]
-
-private typealias PosDir = Pair<Pos3, Dir2>
 
 private data class Pos3(val x: Int, val y: Int) {
     override fun toString(): String {
         return "($x,$y)"
-    }
-
-    fun neighborsWithDir(): List<PosDir> {
-        return Dir2.entries.map { Pair(this + it, it) }
-    }
-
-    operator fun plus(d: Dir2): Pos3 = when (d) {
-        Dir2.U -> Pos3(x,     y - 1)
-        Dir2.R -> Pos3(x + 1, y)
-        Dir2.D -> Pos3(x,     y + 1)
-        Dir2.L -> Pos3(x - 1, y)
     }
 }
 
 private data class MutablePair(var first: Int, var second: Int)
 
 private data class Island(val s: Set<Pos3>, var ch: Char = 'O') {
+    val cursor = Cursor(s)
+
     fun getBoundary(): Pair<IntRange, IntRange> {
         val xLimits = MutablePair(Int.MAX_VALUE, Int.MIN_VALUE)
         val yLimits = MutablePair(Int.MAX_VALUE, Int.MIN_VALUE)
@@ -46,37 +141,16 @@ private data class Island(val s: Set<Pos3>, var ch: Char = 'O') {
     val area: Int
     get() = s.size
 
-    private fun perim(): Set<PosDir> {
-        val todo = mutableListOf<PosDir>()
-        val done = mutableSetOf<PosDir>()
-        val p0 = s.first()
-        var pd = p0.neighborsWithDir().first { s.contains(it.first) }
-        while (true) {
-            val neighs = pd.first.neighborsWithDir().filter { s.contains(it.first) }
-            for (n in neighs) { todo.add(n) }
-            if (todo.size == 0) break
-            done.add(pd)
-            pd = todo.removeFirst()
-        }
-        return done.filterNot { s.contains(it.first) }.toSet()
-    }
-
     val perimeter: Int
     get() {
-        if (s.size == 1) return 4
-        return perim().size
-    }
-
-    private fun sid(): Set<PosDir> {
-        return perim().filterNot { (pos, dir) ->
-            s.contains(pos + dir.turnRight())
-        }.toSet()
+        val r = cursor.getPerimeterCellPairs().size
+        return r
     }
 
     val sides: Int
     get() {
-        if (s.size == 1) return 4
-        return sid().size
+        val r = cursor.getSideCount()
+        return r
     }
 
     val price: Int
@@ -218,7 +292,7 @@ private fun part1(m: Matrix4, debug: Boolean = false): Int {
     }
 
     val totalPrice = m.findIslands().fold(0) { sum, island -> sum + island.price }
-    //println("totalPrice: $totalPrice")
+    if (debug) println("totalPrice: $totalPrice")
 
     return totalPrice
 }
@@ -226,7 +300,7 @@ private fun part1(m: Matrix4, debug: Boolean = false): Int {
 private fun part2(m: Matrix4, debug: Boolean = false): Int {
     if (debug) {
         for (island in m.findIslands()) {
-            //println(island.getMatrix())
+            println(island.getMatrix())
             println("area: ${island.area}")
             println("sides: ${island.sides}")
             println("discountPrice: ${island.discountPrice}")
@@ -235,7 +309,7 @@ private fun part2(m: Matrix4, debug: Boolean = false): Int {
     }
 
     val totalDiscountPrice = m.findIslands().fold(0) { sum, island -> sum + island.discountPrice }
-    println("totalDiscountPrice: $totalDiscountPrice")
+    if (debug) println("totalDiscountPrice: $totalDiscountPrice")
 
     return totalDiscountPrice
 }
@@ -249,7 +323,7 @@ fun main() {
         val mt5 = parse(readInput("12t5"))
         val m = parse(readInput("12"))
 
-        check(part1(mt1) == 140)
+        check(part1(mt1, true) == 140)
         check(part1(mt2) == 772)
         check(part1(mt3) == 1930)
         println("Answer to part 1: ${part1(m)}")

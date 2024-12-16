@@ -27,14 +27,22 @@ private data class State2(val m: Matrix7, val pos: Pos7, val dir: Dir4, val scor
         return State2(m, pos, dir2, score + TURN_SCORE)
     }
 
-    fun moveForward(d: Dir4): State2 {
-        val pos2 = when (d) {
+    fun moveForward(): State2 {
+        val pos2 = when (dir) {
             Dir4.N -> Pos7(pos.x, pos.y - 1)
             Dir4.E -> Pos7(pos.x + 1, pos.y)
             Dir4.S -> Pos7(pos.x, pos.y + 1)
             Dir4.W -> Pos7(pos.x - 1, pos.y)
         }
         return State2(m, pos2, dir, score + MOVE_SCORE)
+    }
+
+    fun isValid(): Boolean {
+        return m[pos] != WALL
+    }
+
+    fun isGoal(): Boolean {
+        return m[pos] == END
     }
 
     override fun toString(): String {
@@ -103,10 +111,37 @@ private fun parse(lines: List<String>): State2 {
 }
 
 private fun part1(st: State2, debug: Boolean = false): Int {
-    println(st)
-    var sum = 0
-    println("sum: $sum")
-    return sum
+    val visitedPositions = mutableSetOf<Pos7>()
+    val todo = mutableListOf(st)
+    val successStates =  mutableListOf<State2>()
+
+    while (todo.size > 0) {
+        val currentSt = todo.removeFirst()
+        if (debug) println("todo:${todo.size}|ss:${successStates.size}\n$currentSt")
+        val candidates = listOf(
+            currentSt.moveForward(),
+            currentSt.turnLeft(),
+            currentSt.turnRight()
+        ).filter {
+            if (visitedPositions.contains(it.pos)) false
+            else if (!it.isValid()) false
+            else if (it.isGoal()) {
+                successStates.add(it)
+                false
+            }
+            else true
+        }
+        visitedPositions.add(currentSt.pos)
+        todo += candidates
+    }
+
+    check(successStates.size > 0)
+    if (debug) println(successStates)
+    successStates.sortByDescending { it.score }
+    val bestState = successStates.first()
+    if (debug) println(bestState)
+    if (debug) println("bestScore: ${bestState.score}")
+    return bestState.score
 }
 
 fun main() {
@@ -115,13 +150,13 @@ fun main() {
         val oT1 = part1(iT1, true)
         check(oT1 == 7036)
 
-        val iT2 = parse(readInput("16t2"))
+        /*val iT2 = parse(readInput("16t2"))
         val oT2 = part1(iT2, true)
         check(oT2 == 11048)
 
         val i1 = parse(readInput("16"))
         val o1 = part1(i1, true)
-        println("Answer to part 1: $o1")
+        println("Answer to part 1: $o1")*/
     }
     println(dt)
 }

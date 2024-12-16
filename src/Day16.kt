@@ -10,23 +10,15 @@ private const val TURN_SCORE = 1000
 
 private enum class Dir4 { N, E, S, W }
 
+private enum class Decision { F, L, R }
+
 private data class Pos7(val x: Int, val y: Int) {
     override fun toString(): String {
         return "($x,$y)"
     }
 }
 
-private data class State2(val m: Matrix7, val pos: Pos7, val dir: Dir4, val score: Int) {
-    fun turnRight(): State2 {
-        val dir2 = Dir4.entries[(dir.ordinal + 1) % Dir4.entries.size]
-        return State2(m, pos, dir2, score + TURN_SCORE)
-    }
-
-    fun turnLeft(): State2 {
-        val dir2 = Dir4.entries[(dir.ordinal + Dir4.entries.size - 1) % Dir4.entries.size]
-        return State2(m, pos, dir2, score + TURN_SCORE)
-    }
-
+private data class State2(val m: Matrix7, val pos: Pos7, val dir: Dir4, val score: Int, val decisions: List<Decision>) {
     fun moveForward(): State2 {
         val pos2 = when (dir) {
             Dir4.N -> Pos7(pos.x, pos.y - 1)
@@ -34,7 +26,20 @@ private data class State2(val m: Matrix7, val pos: Pos7, val dir: Dir4, val scor
             Dir4.S -> Pos7(pos.x, pos.y + 1)
             Dir4.W -> Pos7(pos.x - 1, pos.y)
         }
-        return State2(m, pos2, dir, score + MOVE_SCORE)
+        val de = decisions.toMutableList(); de.add(Decision.F)
+        return State2(m, pos2, dir, score + MOVE_SCORE, de)
+    }
+
+    fun turnLeft(): State2 {
+        val dir2 = Dir4.entries[(dir.ordinal + Dir4.entries.size - 1) % Dir4.entries.size]
+        val de = decisions.toMutableList(); de.add(Decision.L)
+        return State2(m, pos, dir2, score + TURN_SCORE, de)
+    }
+
+    fun turnRight(): State2 {
+        val dir2 = Dir4.entries[(dir.ordinal + 1) % Dir4.entries.size]
+        val de = decisions.toMutableList(); de.add(Decision.R)
+        return State2(m, pos, dir2, score + TURN_SCORE, de)
     }
 
     fun isValid(): Boolean {
@@ -107,7 +112,7 @@ private fun parse(lines: List<String>): State2 {
     val pos = m.find(START)
     check(pos != null)
     m[pos] = EMPTY
-    return State2(m, pos, Dir4.E, 0)
+    return State2(m, pos, Dir4.E, 0, listOf())
 }
 
 private fun part1(st: State2, debug: Boolean = false): Int {
@@ -117,7 +122,7 @@ private fun part1(st: State2, debug: Boolean = false): Int {
 
     while (todo.size > 0) {
         val currentSt = todo.removeFirst()
-        if (debug) println("todo:${todo.size}|ss:${successStates.size}\n$currentSt")
+        // if (debug) println("todo:${todo.size}|ss:${successStates.size}\n$currentSt")
         val candidates = listOf(
             currentSt.moveForward(),
             currentSt.turnLeft(),
@@ -136,11 +141,12 @@ private fun part1(st: State2, debug: Boolean = false): Int {
     }
 
     check(successStates.size > 0)
-    if (debug) println(successStates)
-    successStates.sortByDescending { it.score }
+    //if (debug) println(successStates)
+    successStates.sortBy { it.score }
     val bestState = successStates.first()
     if (debug) println(bestState)
-    if (debug) println("bestScore: ${bestState.score}")
+    if (debug) println("best score: ${bestState.score}")
+    if (debug) println("best decisions: ${bestState.decisions}")
     return bestState.score
 }
 
@@ -150,13 +156,13 @@ fun main() {
         val oT1 = part1(iT1, true)
         check(oT1 == 7036)
 
-        /*val iT2 = parse(readInput("16t2"))
+        val iT2 = parse(readInput("16t2"))
         val oT2 = part1(iT2, true)
         check(oT2 == 11048)
 
         val i1 = parse(readInput("16"))
         val o1 = part1(i1, true)
-        println("Answer to part 1: $o1")*/
+        println("Answer to part 1: $o1")
     }
     println(dt)
 }

@@ -51,7 +51,15 @@ private data class State2(val m: Matrix7, val pos: Pos7, val dir: Dir4, val scor
     }
 
     override fun toString(): String {
-        return m.toStringSpecial { p -> if (p == pos) '@' else null }
+        return m.toStringSpecial {
+            p ->
+            if (p == pos) when(dir) {
+                Dir4.N -> '^'
+                Dir4.E -> '>'
+                Dir4.S -> 'v'
+                Dir4.W -> '<'
+            }
+            else null }
     }
 }
 
@@ -116,9 +124,10 @@ private fun parse(lines: List<String>): State2 {
 }
 
 private fun part1(st: State2, debug: Boolean = false): Int {
-    val visitedPositions = mutableSetOf<Pos7>()
+    val visitedHeadings = mutableSetOf<Pair<Pos7, Dir4>>()
     val todo = mutableListOf(st)
     val successStates =  mutableListOf<State2>()
+    if (debug) println("start pos: ${st.pos}")
 
     while (todo.size > 0) {
         val currentSt = todo.removeFirst()
@@ -126,9 +135,9 @@ private fun part1(st: State2, debug: Boolean = false): Int {
         val candidates = listOf(
             currentSt.moveForward(),
             currentSt.turnLeft(),
-            currentSt.turnRight()
+            currentSt.turnRight(),
         ).filter {
-            if (visitedPositions.contains(it.pos)) false
+            if (visitedHeadings.contains(Pair(it.pos, it.dir))) false
             else if (!it.isValid()) false
             else if (it.isGoal()) {
                 successStates.add(it)
@@ -136,33 +145,51 @@ private fun part1(st: State2, debug: Boolean = false): Int {
             }
             else true
         }
-        visitedPositions.add(currentSt.pos)
+        visitedHeadings.add(Pair(currentSt.pos, currentSt.dir))
         todo += candidates
     }
 
     check(successStates.size > 0)
+    //for (ss in successStates) { println("- ${ss.score}: ${ss.decisions}") }
+
     //if (debug) println(successStates)
     successStates.sortBy { it.score }
     val bestState = successStates.first()
     if (debug) println(bestState)
-    if (debug) println("best score: ${bestState.score}")
+    if (debug) println("best score: ${bestState.score} (out of ${successStates.size})")
     if (debug) println("best decisions: ${bestState.decisions}")
+
+    if (false) {
+        var currentSt2 = st
+        println("\n***********\nwinning combination:\n")
+        //println(currentSt2)
+        bestState.decisions.forEachIndexed { idx, decision ->
+            println("\n#$idx $decision:")
+            currentSt2 = when (decision) {
+                Decision.F -> currentSt2.moveForward()
+                Decision.L -> currentSt2.turnLeft()
+                Decision.R -> currentSt2.turnRight()
+            }
+            println(currentSt2)
+        }
+    }
+
     return bestState.score
 }
 
 fun main() {
     val dt = measureTime {
-        val iT1 = parse(readInput("16t1"))
+        /*val iT1 = parse(readInput("16t1"))
         val oT1 = part1(iT1, true)
-        check(oT1 == 7036)
+        check(oT1 == 7036)*/
 
         val iT2 = parse(readInput("16t2"))
         val oT2 = part1(iT2, true)
         check(oT2 == 11048)
 
-        val i1 = parse(readInput("16"))
+        /*val i1 = parse(readInput("16"))
         val o1 = part1(i1, true)
-        println("Answer to part 1: $o1")
+        println("Answer to part 1: $o1") // 92364 X 10028 X*/
     }
     println(dt)
 }

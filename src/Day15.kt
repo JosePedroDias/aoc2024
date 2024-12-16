@@ -95,10 +95,6 @@ private class Matrix6 {
         ranges[1] = IntRange(yi, yf)
     }
 
-    fun inBounds(p: Pos4): Boolean {
-        return p.x in ranges[0] && p.y in ranges[1]
-    }
-
     fun find(chTarget: Char): Pos4? {
         for ((p, ch) in m.entries) {
             if (ch == chTarget) {
@@ -140,7 +136,10 @@ private fun toGps(p: Pos4): Int {
 private fun part1(st: State, debug: Boolean = false): Int {
     val (m, moves, p) = st
     if (debug) println(m.toStringWithRobot(p))
-    for (d in moves) {
+
+    val numBoxesStart = m.findAll(BOX).count()
+
+    moves.forEachIndexed { nth, d ->
         var isNoop = false
         val positionsToMove = mutableListOf<Pos4>()
         var pt = p.move(d)
@@ -152,19 +151,31 @@ private fun part1(st: State, debug: Boolean = false): Int {
                 BOX -> positionsToMove.add(pt)
                 else -> throw Error("unexpected")
             }
+            //m[p] = EMPTY
             pt = pt.move(d)
         }
 
         if (isNoop) {
-            if (debug) println("$d -> stuck: noop")
+            if (debug) println("#$nth: $d -> stuck: noop")
         } else {
             if (debug) {
-                if (positionsToMove.size > 0) println("$d -> robot drags ${positionsToMove.size} boxes")
-                else println("$d -> robot moves")
+                if (positionsToMove.size > 0) println("#$nth: $d -> robot drags ${positionsToMove.size} boxes")
+                else println("#$nth: $d -> robot moves")
             }
+            m[p] = EMPTY // TODO
             p += d
-            for (pb in positionsToMove) { m[pb] = EMPTY }
-            positionsToMove.map { it.move(d) } .forEach { m[it] = BOX }
+            m[p] = EMPTY
+
+            if (positionsToMove.size > 0) { // TODO
+                //for (pb in positionsToMove) { m[pb] = EMPTY }
+                //positionsToMove.map { it.move(d) } .forEach { m[it] = BOX }
+                m[positionsToMove.first()] = EMPTY
+                m[positionsToMove.last().move(d)] = BOX
+            }
+
+            // TODO
+            val numBoxes = m.findAll(BOX).count()
+            check(numBoxes == numBoxesStart) { println(m.toStringWithRobot(p)); "$nth oops ($numBoxesStart -> $numBoxes)" }
         }
         if (debug) println(m.toStringWithRobot(p))
     }
@@ -178,16 +189,24 @@ private fun part1(st: State, debug: Boolean = false): Int {
 fun main() {
     val dt = measureTime {
         val st2 = parse(readInput("15t2"))
+        val numBoxes2a = st2.first.findAll(BOX).count()
         val res2 = part1(st2)
+        val numBoxes2b = st2.first.findAll(BOX).count()
+        println("$numBoxes2a $numBoxes2b")
+        check(numBoxes2a == numBoxes2b)
         check(res2 == 2028)
 
         val st1 = parse(readInput("15t1"))
+        val numBoxes1a = st1.first.findAll(BOX).count()
         val res1 = part1(st1, true)
+        val numBoxes1b = st1.first.findAll(BOX).count()
+        println("$numBoxes1a $numBoxes1b")
+        check(numBoxes1a == numBoxes1b)
         check(res1 == 10092)
 
-        val s = parse(readInput("15"))
-        val resp1 = part1(s)
-        println("Answer to part 1: $resp1")
+        //val s = parse(readInput("15"))
+        //val resp1 = part1(s)
+        //println("Answer to part 1: $resp1")
     }
     println(dt)
 }

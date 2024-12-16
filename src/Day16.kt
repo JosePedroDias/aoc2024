@@ -5,6 +5,9 @@ private const val END = 'E'
 private const val WALL = '#'
 private const val EMPTY = '.'
 
+private const val MOVE_SCORE = 1
+private const val TURN_SCORE = 1000
+
 private enum class Dir4 { N, E, S, W }
 
 private data class Pos7(val x: Int, val y: Int) {
@@ -13,15 +16,15 @@ private data class Pos7(val x: Int, val y: Int) {
     }
 }
 
-private data class State2(val pos: Pos7, val dir: Dir4, val score: Int) {
+private data class State2(val m: Matrix7, val pos: Pos7, val dir: Dir4, val score: Int) {
     fun turnRight(): State2 {
         val dir2 = Dir4.entries[(dir.ordinal + 1) % Dir4.entries.size]
-        return State2(pos, dir2, score + 1)
+        return State2(m, pos, dir2, score + TURN_SCORE)
     }
 
     fun turnLeft(): State2 {
         val dir2 = Dir4.entries[(dir.ordinal + Dir4.entries.size - 1) % Dir4.entries.size]
-        return State2(pos, dir2, score + 1)
+        return State2(m, pos, dir2, score + TURN_SCORE)
     }
 
     fun moveForward(d: Dir4): State2 {
@@ -31,7 +34,11 @@ private data class State2(val pos: Pos7, val dir: Dir4, val score: Int) {
             Dir4.S -> Pos7(pos.x, pos.y + 1)
             Dir4.W -> Pos7(pos.x - 1, pos.y)
         }
-        return State2(pos2, dir, score + 1)
+        return State2(m, pos2, dir, score + MOVE_SCORE)
+    }
+
+    override fun toString(): String {
+        return m.toStringSpecial { p -> if (p == pos) '@' else null }
     }
 }
 
@@ -59,14 +66,29 @@ private data class Matrix7(val w: Int, val h: Int) {
     override fun toString(): String {
         val sb = StringBuilder()
         for (y in ranges[1]) {
-            for (x in ranges[0]) { sb.append(this[Pos7(x, y)]) }
+            for (x in ranges[0]) {
+                sb.append(this[Pos7(x, y)])
+            }
+            sb.append('\n')
+        }
+        return sb.toString()
+    }
+
+    fun toStringSpecial(fn: (p: Pos7) -> Char?): String {
+        val sb = StringBuilder()
+        for (y in ranges[1]) {
+            for (x in ranges[0]) {
+                val pos = Pos7(x, y)
+                val ch = fn(pos) ?: this[pos]
+                sb.append(ch)
+            }
             sb.append('\n')
         }
         return sb.toString()
     }
 }
 
-private fun parse(lines: List<String>): Pair<Matrix7, State2> {
+private fun parse(lines: List<String>): State2 {
     val w = lines[0].length
     val h = lines.size
     val m = Matrix7(w, h)
@@ -77,11 +99,11 @@ private fun parse(lines: List<String>): Pair<Matrix7, State2> {
     val pos = m.find(START)
     check(pos != null)
     m[pos] = EMPTY
-    val st = State2(pos, Dir4.E, 0)
-    return Pair(m, st)
+    return State2(m, pos, Dir4.E, 0)
 }
 
-private fun part1(m: Pair<Matrix7, State2>, debug: Boolean = false): Int {
+private fun part1(st: State2, debug: Boolean = false): Int {
+    println(st)
     var sum = 0
     println("sum: $sum")
     return sum

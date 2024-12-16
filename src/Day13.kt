@@ -19,7 +19,16 @@ private data class Pos5(var x:Num = 0, var y:Num = 0) {
         x += INCREMENT
         y += INCREMENT
     }
+    fun toPos6(): Pos6 {
+        return Pos6(x.toDouble(), y.toDouble())
+    }
+    fun fromPos6(p6: Pos6) {
+        x = p6.x.toLong()
+        y = p6.y.toLong()
+    }
 }
+private data class Pos6(var x:Double = 0.0, var y:Double = 0.0)
+
 
 private typealias Case = List<Pos5>
 
@@ -92,6 +101,8 @@ private fun part2(seq: Sequence<Case>): Long {
         ++caseI
 
         val result = solveEq(Pair(aVec.x, aVec.y), Pair(bVec.x, bVec.y), Pair(goalVec.x + INCREMENT, goalVec.y + INCREMENT))
+        //goalVec.bump()
+        //val result = solve(aVec, bVec, goalVec)
         if (result != null) {
             val (aTimes, bTimes) = result
             println("FOUND: a=$aTimes, b=$bTimes")
@@ -104,6 +115,54 @@ private fun part2(seq: Sequence<Case>): Long {
     return totalCost
 }
 
+/**
+ * equations:
+ * a * A.x + b * B.x = G.x
+ * a * A.y + b * B.y = G.y
+ *
+ * b = (G.x - a * A.x) / B.x
+ * b = (G.y - a * A.y) / B.y
+ *
+ * (G.y - a * A.y) / B.y = (G.x - a * A.x) / B.x
+ *
+ * G.y / B.y - a * A.y / B.y = G.x / B.x - a * A.x / B.x
+ *
+ * G.y / B.y - G.x / B.x = - a * A.x / B.x + a * A.y / B.y
+ *
+ * G.y / B.y - G.x / B.x = a  * (A.y / B.y - A.x / B.x)
+ *
+ * a = (G.y / B.y - G.x / B.x) / (A.y / B.y - A.x / B.x)
+ *
+ * a = (G.y - b * B.y) / A.y
+ */
+private fun solve(A: Pos6, B: Pos6, G: Pos6): Pair<Num, Num>? {
+    //val b = (G.x * A.y - G.y * A.x) / (B.x * A.y - B.y * A.x)
+
+    //val a = (G.y - b * B.y) / A.y
+
+    val a = (G.y / B.y - G.x / B.x) / (A.y / B.y - A.x / B.x)
+    val b = (G.x - a * A.x) / B.x
+
+    val Gxx = a * A.x + b * B.x
+    val Gyy = b * A.y + b * B.y
+    println("Gx: ${G.x}, Gy: ${G.y}")
+    println("Gxx:$Gxx, Gyy:$Gyy")
+
+    if (Gxx != G.x || Gyy != G.y) { return null }
+
+    //println("a=$a, b=$b")
+    return Pair(a.toLong(), b.toLong())
+}
+
+private fun solve2(A: Pos6, B: Pos6, G: Pos6): Pair<Num, Num>? {
+    val bn = p.y * a.x - p.x * a.y
+    val bd = a.x * b.y - a.y * b.x
+    val moveB = if (bn % bd == 0L) bn / bd else return 0
+    val an = p.x - moveB * b.x
+    val moveA = if (an % a.x == 0L) an / a.x else return 0
+    return moveA * 3 + moveB
+}
+
 fun main() {
     val dt = measureTime {
         val p = Pos5()
@@ -113,11 +172,16 @@ fun main() {
         check(p == Pos5(8400, 5400))
         check(cost == 280)
 
+
+        val res = solve(Pos5(94L, 34L).toPos6(), Pos5(22L, 67L).toPos6(), Pos5(8400L, 5400L).toPos6())
+        println("RES: $res")
+        check(false)
+
         val test = parse("13_test") // 480
         val prob = parse("13")
 
-        //check(part1(test) == 480)
-        //println("Answer to part 1: ${part1(prob)}")
+        check(part1(test) == 480)
+        println("Answer to part 1: ${part1(prob)}")
 
         //check(part2(prob) == 140L)
         println("Answer to part 2: ${part2(prob)}")

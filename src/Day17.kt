@@ -1,13 +1,14 @@
 import kotlin.math.pow
 import kotlin.time.measureTime
 
-private data class PS(var rA: Int, var rB: Int, var rC: Int, var program: List<Int>) {
+const val OP_JNZ = 3
+
+private data class PS(var rA: Int, var rB: Int, var rC: Int, var program: List<Int>, val outs: MutableList<Int> = mutableListOf()) {
     var ip: Int = 0 // +2 except jump, end once past program size
-    val outs = mutableListOf<Int>()
     var p = fun(s: String) {}
     var pp = fun(s: String) {}
 
-    fun getValue(i: Int): Int {
+    fun combo(i: Int): Int {
         return when (i) {
             0 -> 0
             1 -> 1
@@ -16,64 +17,68 @@ private data class PS(var rA: Int, var rB: Int, var rC: Int, var program: List<I
             4 -> rA
             5 -> rB
             6 -> rC
-            // 7 -> ?
             else -> throw Error("unexpected combo: $i")
         }
     }
 
-    // opcode 0
-    fun adv(v: Int) {
-        pp("adv($v, rA:$rA)")
+    // opcode 0 C
+    fun adv(v_: Int) {
+        val v = combo((v_))
+        pp("adv($v_/$v', rA:$rA)")
         rA = (rA / 2.0.pow(v)).toInt()
         p(" = $rA (rA)")
     }
 
-    // opcode 1
+    // opcode 1 L
     fun bxl(v: Int) {
         pp("bxl($v, rB:$rB)")
         rB = rB.xor(v)
         p(" = $rB (rB)")
     }
 
-    // opcode 2
-    fun bst(v: Int) {
-        pp("bst($v)")
+    // opcode 2 C
+    fun bst(v_: Int) {
+        val v = combo(v_)
+        pp("bst($v_/$v')")
         rB = v % 8
         p(" = $rB (rB)")
     }
 
-    // opcode 3
+    // opcode 3 L
     fun jnz(v: Int) {
         pp("jnz($v, rA:$rA)")
-        if (rA != 0) { ip = v - 2 }
+        ip = if (rA != 0) v else ip + 1
         p("$ip (ip)")
     }
 
-    // opcode 4
+    // opcode 4 ?
     fun bxc() {
         pp("bxc(rB:$rB, rC:$rC)")
         rB = rB.xor(rC)
         p("$rB (rB)")
     }
 
-    // opcode 5
-    fun out(v: Int) {
-        p("out($v)")
+    // opcode 5 C
+    fun out(v_: Int) {
+        val v = combo(v_)
+        p("out($v_/$v')")
         val m8 = v % 8
         outs.add(m8)
         println(m8)
     }
 
-    // opcode 6
-    fun bdv(v: Int) {
-        pp("bdv($v, rA:$rA)")
+    // opcode 6 C
+    fun bdv(v_: Int) {
+        val v = combo(v_)
+        pp("bdv($v_/$v', rA:$rA)")
         rB = (rA / 2.0.pow(v)).toInt()
         p("$rB (rB)")
     }
 
-    // opcode 7
-    fun cdv(v: Int) {
-        pp("cdv($v, rA:$rA)")
+    // opcode 7 C
+    fun cdv(v_: Int) {
+        val v = combo(v_)
+        pp("cdv($v_/$v', rA:$rA)")
         rC = (rA / 2.0.pow(v)).toInt()
         p("$rC (rC)")
     }
@@ -85,11 +90,10 @@ private data class PS(var rA: Int, var rB: Int, var rC: Int, var program: List<I
         }
 
         p("PROGRAM: $program")
-        while (true) {
-            if (ip > program.size - 2) break
-            val op = program[ip]
-            val v = getValue(program[ip + 1])
-            p("** ip:$ip, op:$op, ip+1:${ip+1}, combo:$v, rA:$rA, rB:$rB, rC:$rC **")
+        while (ip < program.size) {
+            val op = program[ip++]
+            val v = program[ip]
+            p("** ip:${ip-1}, ip+1:${ip}, op:$op, v:$v, rA:$rA, rB:$rB, rC:$rC **")
             when (op) {
                 0 -> adv(v)
                 1 -> bxl(v)
@@ -101,7 +105,7 @@ private data class PS(var rA: Int, var rB: Int, var rC: Int, var program: List<I
                 7 -> cdv(v)
                 else -> throw Error("unexpected opcode: $op")
             }
-            ip += 2
+            if (op != OP_JNZ) ++ip
         }
     }
 }
@@ -138,16 +142,24 @@ fun main() {
         check(t3.outs == listOf(4,2,5,6,7,7,7,7,3,1,0))
 
         val t4 = PS(0, 29, 0, listOf(1,7))
-        t4.run() // todo fails
+        t4.run()
         check(t4.rA == 0)
         check(t4.rB == 26)
         check(t4.rC == 0)
         check(t4.outs == listOf<Int>())
 
+        val t5 = PS(0, 2024, 43690, listOf(4,0))
+        t5.run()
+        check(t5.rA == 0)
+        check(t5.rB == 44354)
+        check(t5.rC == 43690)
+        check(t5.outs == listOf<Int>())
+
         val pT1 = parse(readInput("17t1"))
         println(pT1)
         pT1.run()
         println(pT1)
+        check(pT1.outs == listOf(4,6,3,5,6,3,5,2,1,0))
 
         println("----")
 
@@ -155,6 +167,7 @@ fun main() {
         println(p)
         p.run()
         println(p)
+        println("Answer to part 1: ${p.outs.joinToString(",")}")
     }
     println(dt)
 }

@@ -25,7 +25,8 @@ private data class PS(var rA: Int, var rB: Int, var rC: Int, var program: List<I
     fun adv(v_: Int) {
         val v = combo((v_))
         pp("adv($v_/$v', rA:$rA)")
-        rA = (rA / 2.0.pow(v)).toInt()
+        //rA = (rA / 2.0.pow(v)).toInt()
+        rA = rA.shr(v)
         p(" = $rA (rA)")
     }
 
@@ -64,14 +65,14 @@ private data class PS(var rA: Int, var rB: Int, var rC: Int, var program: List<I
         p("out($v_/$v')")
         val m8 = v % 8
         outs.add(m8)
-        println(m8)
+        //println(m8)
     }
 
     // opcode 6 C
     fun bdv(v_: Int) {
         val v = combo(v_)
         pp("bdv($v_/$v', rA:$rA)")
-        rB = (rA / 2.0.pow(v)).toInt()
+        rB = rA.shr(v)
         p("$rB (rB)")
     }
 
@@ -79,7 +80,7 @@ private data class PS(var rA: Int, var rB: Int, var rC: Int, var program: List<I
     fun cdv(v_: Int) {
         val v = combo(v_)
         pp("cdv($v_/$v', rA:$rA)")
-        rC = (rA / 2.0.pow(v)).toInt()
+        rC = rA.shr(v)
         p("$rC (rC)")
     }
 
@@ -89,7 +90,7 @@ private data class PS(var rA: Int, var rB: Int, var rC: Int, var program: List<I
             pp = fun(s: String) { print(s) }
         }
 
-        p("PROGRAM: $program")
+        //p("PROGRAM: $program")
         while (ip < program.size) {
             val op = program[ip++]
             val v = program[ip]
@@ -168,6 +169,21 @@ fun main() {
         p.run()
         println(p)
         println("Answer to part 1: ${p.outs.joinToString(",")}")
+
+        // part 2
+
+        val ri = readInput("17")
+        for (rA in 0..Int.MAX_VALUE) {
+            if (rA % 1000 == 0) println("$rA of ${Int.MAX_VALUE} (${rA.toFloat()/Int.MAX_VALUE.toFloat() * 100})")
+            val pp = parse(ri)
+            pp.rA = rA
+            pp.run()
+            if (pp.program == pp.outs) {
+                println("Answer to part 2: $rA}")
+                break
+            }
+        }
+        println("ALL DONE")
     }
     println(dt)
 }

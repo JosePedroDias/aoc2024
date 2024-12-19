@@ -174,7 +174,7 @@ fun main() {
 
         val ri = readInput("17")
         for (rA in 0..Int.MAX_VALUE) {
-            if (rA % 1000 == 0) println("$rA of ${Int.MAX_VALUE} (${rA.toFloat()/Int.MAX_VALUE.toFloat() * 100})")
+            if (rA % 100000 == 0) println("$rA of ${Int.MAX_VALUE} (${rA.toFloat()/Int.MAX_VALUE.toFloat() * 100})")
             val pp = parse(ri)
             pp.rA = rA
             pp.run()

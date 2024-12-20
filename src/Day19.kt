@@ -22,45 +22,40 @@ private fun possible(pattern: String, alphabet: List<String>): Boolean {
     return m != null
 }
 
-private fun possibilities1(goal: String, alphabet: List<String>, soFar: String = ""): Int {
-    if (soFar == goal) return 1
-    if (soFar.length > goal.length) return 0
+private fun possibilities1(goal: String, alphabet: List<String>, soFar: Int = 0): Int {
+    if (soFar == goal.length) return 1
     var sum = 0
     for (al in alphabet) {
-        val nxt = "$soFar$al"
-        if (
-            //soFar.length + al.length <= goal.length &&
-            goal.startsWith(nxt)) {
+        val nxt = soFar + al.length
+        if (nxt <= goal.length && goal.substring(soFar, nxt) == al) {
+            //println(goal.substring(soFar, nxt))
             sum += possibilities1(goal, alphabet, nxt)
         }
     }
     return sum
 }
 
-private fun possibilities2(goal: String, alphabet: List<String>): Int {
-    var sum = 0
-    val queue = ArrayDeque<String>()
-    queue.add("")
+private tailrec fun possibilities2(
+    goal: String,
+    alphabet: List<String>,
+    stack: List<Int> = listOf(0),
+    sum: Int = 0
+): Int {
+    if (stack.isEmpty()) return sum
 
-    while (queue.isNotEmpty()) {
-        val current = queue.removeFirst()
+    val current = stack.first()
+    val rest = stack.drop(1)
 
-        when {
-            current == goal -> sum += 1
-            goal.startsWith(current) -> {
-                for (al in alphabet) {
-                    val next = current + al
-                    if (goal.startsWith(next)) {
-                        queue.add(next)
-                    }
-                }
-            }
+    return if (current == goal.length) {
+        possibilities2(goal, alphabet, rest, sum + 1)
+    } else {
+        val nextStates = alphabet.mapNotNull { al ->
+            val nxt = current + al.length
+            if (nxt <= goal.length && goal.substring(current, nxt) == al) nxt else null
         }
+        possibilities2(goal, alphabet, rest + nextStates, sum)
     }
-
-    return sum
 }
-
 
 private fun part1(puzzle: Puzzle19): Int {
     val (alphabet, candidates) = puzzle
@@ -71,7 +66,7 @@ private fun part2(puzzle: Puzzle19): Int {
     val (alphabet, candidates) = puzzle
     return candidates.mapIndexed { idx, c ->
         println("${idx + 1}/${candidates.size}: $c")
-        possibilities2(c, alphabet)
+        possibilities1(c, alphabet)
     }.sum()
 }
 

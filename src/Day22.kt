@@ -20,6 +20,14 @@ private fun nextSecret(v_: UInt): UInt {
     return v
 }
 
+private fun nthNumber(v_: UInt, times: Int): UInt {
+    var v = v_
+    repeat(times) {
+        v = nextSecret(v)
+    }
+    return v
+}
+
 fun main() {
     val dt = measureTime {
         check(37u == mix(42u, 15u))
@@ -45,9 +53,15 @@ fun main() {
             5908254u)
         )
 
-        val inT1 = readInput("22t1")
+        val inT1 = parse(readInput("22t1"))
+        val outT1 = inT1.map { nthNumber(it, 2000) }
+        check(outT1 == listOf(8685429u, 4700978u, 15273692u, 8667524u))
+        val sumT1 = outT1.sum()
+        check(sumT1 == 37327623u)
 
-        val inP = readInput("22")
+        val inP = parse(readInput("22"))
+        val resP1 = inP.sumOf { nthNumber(it, 2000).toULong() }
+        println("Answer to part 1: $resP1")
     }
     println(dt)
 }

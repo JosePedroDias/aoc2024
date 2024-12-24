@@ -44,6 +44,14 @@ finds the most well connected sets of nodes in a (non-directed) graph
 - https://iq.opengenus.org/bron-kerbosch-algorithm/
 
 
+## Binary add
+
+- https://www.youtube.com/watch?v=t-jSowup1N0
+- https://www.build-electronic-circuits.com/full-adder/
+- https://falstad.com/circuit/ (circuits / combinational logic > full adder)
+- https://everycircuit.com/app
+
+
 ## Other
 
 - https://www.geeksforgeeks.org/dsa-tutorial-learn-data-structures-and-algorithms/

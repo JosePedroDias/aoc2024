@@ -1,0 +1,43 @@
+digraph FullAdder {
+    rankdir=LR; // Left-to-right layout
+    splines=ortho; // Orthogonal lines
+    node [style=filled, fontname="Helvetica"];
+    edge [fontname="Helvetica"];
+
+    // Input labels
+    A [label="A", shape=none];
+    B [label="B", shape=none];
+    Cin [label=<C<SUB>in</SUB>>, shape=none];
+
+    // XOR gates
+    XOR1 [label="XOR", shape=ellipse, fillcolor=lightblue];
+    XOR2 [label="XOR", shape=ellipse, fillcolor=lightblue];
+
+    // AND gates
+    AND1 [label="AND", shape=box, fillcolor=lightyellow];
+    AND2 [label="AND", shape=box, fillcolor=lightyellow];
+
+    // OR gate
+    OR [label="OR", shape=diamond, fillcolor=lightpink];
+
+    // Output labels
+    Sum [label="Sum", shape=none, fillcolor=orange];
+    Cout [label=<C<SUB>out</SUB>>, shape=none, fillcolor=orange];
+
+    // Connections
+    A -> XOR1;
+    B -> XOR1;
+    XOR1 -> XOR2;
+    Cin -> XOR2;
+    XOR2 -> Sum;
+
+    A -> AND1;
+    B -> AND1;
+    AND1 -> OR;
+
+    XOR1 -> AND2;
+    Cin -> AND2;
+    AND2 -> OR;
+
+    OR -> Cout;
+}

@@ -1,9 +1,77 @@
+import java.io.File
 import kotlin.math.pow
 import kotlin.time.measureTime
 
 private typealias Mem = MutableMap<String, Int?>
 
 private data class Tuple4(val a: String, val op: String, val b: String, val c: String)
+
+
+private fun dotGraph(pair: Pair<Mem, List<Tuple4>>): String {
+    val (mem, tuples) = pair
+
+    val sb = StringBuilder()
+
+    // start
+    sb.append("""digraph FullAdder {
+    rankdir=LR; // Left-to-right layout
+    splines=ortho; // Orthogonal lines
+    node [style=filled, fontname="Helvetica"];
+    edge [fontname="Helvetica"];
+""")
+
+    // nodes
+    sb.append("""
+    // NODES
+        
+    // Input labels
+    A [label="A", shape=none];
+    B [label="B", shape=none];
+    Cin [label=<C<SUB>in</SUB>>, shape=none];
+
+    // XOR gates
+    XOR1 [label="XOR", shape=ellipse, fillcolor=lightblue];
+    XOR2 [label="XOR", shape=ellipse, fillcolor=lightblue];
+
+    // AND gates
+    AND1 [label="AND", shape=box, fillcolor=lightyellow];
+    AND2 [label="AND", shape=box, fillcolor=lightyellow];
+
+    // OR gate
+    OR [label="OR", shape=diamond, fillcolor=lightpink];
+
+    // Output labels
+    Sum [label="Sum", shape=none, fillcolor=orange];
+    Cout [label=<C<SUB>out</SUB>>, shape=none, fillcolor=orange];
+""")
+
+    // edges
+    sb.append("""
+    // EDGES
+    
+    A -> XOR1;
+    B -> XOR1;
+    XOR1 -> XOR2;
+    Cin -> XOR2;
+    XOR2 -> Sum;
+
+    A -> AND1;
+    B -> AND1;
+    AND1 -> OR;
+
+    XOR1 -> AND2;
+    Cin -> AND2;
+    AND2 -> OR;
+
+    OR -> Cout;
+""")
+
+    // end
+    sb.append("""}
+""")
+
+    return sb.toString()
+}
 
 private fun parse(lines: List<String>): Pair<Mem, List<Tuple4>> {
     var atSecondSection = false
@@ -92,16 +160,26 @@ private fun Run(pair: Pair<Mem, List<Tuple4>>, count: Int): Long {
         memPrev = mem
     }
 
+    println(memPrev.keys)
+
     return getValue(memPrev, count)
 }
 
 fun main() {
     val dt = measureTime {
-        val v = Run(parse(readInput("24t1")), 3); check(v == 4L)
-        val v2 = Run(parse(readInput("24t2")), 12); check(v2 == 2024L)
-        val r = parse(readInput("24"))
-        val v3 = Run(r, 46)
-        println("Answer to part 1: $v3")
+        val iT1 = parse(readInput("24t1"))
+        val oT1 = Run(iT1, 3)
+        check(oT1 == 4L)
+
+        val iT2 = parse(readInput("24t2"))
+        val oT2 = Run(iT2, 12)
+        check(oT2 == 2024L)
+
+        val i = parse(readInput("24"))
+        val o = Run(i, 46)
+        println("Answer to part 1: $o")
+
+        File("extras/24/t1.dot").writeText(dotGraph(iT1))
     }
     println(dt)
 }

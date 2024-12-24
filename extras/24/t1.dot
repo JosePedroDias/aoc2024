@@ -1,0 +1,24 @@
+digraph {
+    rankdir=LR;
+    splines=ortho;
+    node [style=filled, fontname="Helvetica"];
+    edge [fontname="Helvetica"];
+
+    // NODES
+    
+    GATE0 [label="AND", shape=box, fillcolor=lightyellow];
+    GATE1 [label="XOR", shape=ellipse, fillcolor=lightblue];
+    GATE2 [label="OR", shape=diamond, fillcolor=lightpink];
+
+    // EDGES
+    
+    x00 -> GATE0;
+    y00 -> GATE0;
+    GATE0 -> z00;
+    x01 -> GATE1;
+    y01 -> GATE1;
+    GATE1 -> z01;
+    x02 -> GATE2;
+    y02 -> GATE2;
+    GATE2 -> z02;
+}

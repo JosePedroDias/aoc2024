@@ -13,9 +13,9 @@ private fun dotGraph(pair: Pair<Mem, List<Tuple4>>): String {
     val sb = StringBuilder()
 
     // start
-    sb.append("""digraph FullAdder {
-    rankdir=LR; // Left-to-right layout
-    splines=ortho; // Orthogonal lines
+    sb.append("""digraph {
+    rankdir=LR;
+    splines=ortho;
     node [style=filled, fontname="Helvetica"];
     edge [fontname="Helvetica"];
 """)
@@ -23,48 +23,30 @@ private fun dotGraph(pair: Pair<Mem, List<Tuple4>>): String {
     // nodes
     sb.append("""
     // NODES
-        
-    // Input labels
-    A [label="A", shape=none];
-    B [label="B", shape=none];
-    Cin [label=<C<SUB>in</SUB>>, shape=none];
-
-    // XOR gates
-    XOR1 [label="XOR", shape=ellipse, fillcolor=lightblue];
-    XOR2 [label="XOR", shape=ellipse, fillcolor=lightblue];
-
-    // AND gates
-    AND1 [label="AND", shape=box, fillcolor=lightyellow];
-    AND2 [label="AND", shape=box, fillcolor=lightyellow];
-
-    // OR gate
-    OR [label="OR", shape=diamond, fillcolor=lightpink];
-
-    // Output labels
-    Sum [label="Sum", shape=none, fillcolor=orange];
-    Cout [label=<C<SUB>out</SUB>>, shape=none, fillcolor=orange];
+    
 """)
+
+    tuples.forEachIndexed { i, t ->
+        val style = when (t.op) {
+            "AND" -> """label="AND", shape=box, fillcolor=lightyellow"""
+            "OR" -> """label="OR", shape=diamond, fillcolor=lightpink"""
+            "XOR" -> """label="XOR", shape=ellipse, fillcolor=lightblue"""
+            else -> throw Error("OOPS")
+        }
+        sb.append("    GATE$i [$style];\n")
+    }
 
     // edges
     sb.append("""
     // EDGES
     
-    A -> XOR1;
-    B -> XOR1;
-    XOR1 -> XOR2;
-    Cin -> XOR2;
-    XOR2 -> Sum;
-
-    A -> AND1;
-    B -> AND1;
-    AND1 -> OR;
-
-    XOR1 -> AND2;
-    Cin -> AND2;
-    AND2 -> OR;
-
-    OR -> Cout;
 """)
+
+    tuples.forEachIndexed { i, t ->
+        sb.append("    ${t.a} -> GATE$i;\n")
+        sb.append("    ${t.b} -> GATE$i;\n")
+        sb.append("    GATE$i -> ${t.c};\n")
+    }
 
     // end
     sb.append("""}
@@ -180,6 +162,8 @@ fun main() {
         println("Answer to part 1: $o")
 
         File("extras/24/t1.dot").writeText(dotGraph(iT1))
+        File("extras/24/t2.dot").writeText(dotGraph(iT2))
+        File("extras/24/prob.dot").writeText(dotGraph(i))
     }
     println(dt)
 }

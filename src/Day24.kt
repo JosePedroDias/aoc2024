@@ -119,6 +119,12 @@ private fun Xor(a: Int?, b: Int?): Int? {
     return 0
 }
 
+private fun xAndyVars(mem: Mem) = sequence {
+    for (k in mem.keys) {
+        yield(k)
+    }
+}
+
 private fun zedVars(tuples: List<Tuple4>) = sequence {
     for (t in tuples) {
         if (t.c.startsWith("z")) yield(t.c);
@@ -165,11 +171,33 @@ private fun Run(pair: Pair<Mem, List<Tuple4>>): Long {
     return getValue(memPrev, zv)
 }
 
+private fun IsValidAdder(pair: Pair<Mem, List<Tuple4>>): Boolean {
+    var memPrev = pair.first
+    val tuples = pair.second
+
+    val inVars = xAndyVars(memPrev).toList()
+    val xVars = inVars.filter { it.startsWith("x") }
+    val yVars = inVars.filter { it.startsWith("y") }
+
+    val bits = xVars.size
+    check(yVars.size == bits)
+
+    val maxNum = 1.shl(bits)
+    println(maxNum)
+    // TODO
+
+    println(xVars)
+    println(yVars)
+
+    return false
+}
+
 fun main() {
     val dt = measureTime {
         val iT1 = parse(readInput("24t1"))
         val oT1 = Run(iT1)
         check(oT1 == 4L)
+        check(IsValidAdder(iT1) == false)
 
         val iT2 = parse(readInput("24t2"))
         val oT2 = Run(iT2)

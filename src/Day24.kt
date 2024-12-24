@@ -20,13 +20,9 @@ private fun parse(lines: List<String>): Pair<Mem, List<Tuple4>> {
             }
         } else {
             val (a, op, b, arrow, c) = l.split(" ")
-            //println("$a,$op,$b,$c")
             wirings.add(Tuple4(a, op, b, c))
         }
     }
-
-    //println(mem)
-    //println(wirings)
 
     return Pair(mem, wirings)
 }
@@ -49,17 +45,16 @@ private fun Xor(a: Int?, b: Int?): Int? {
     return 0
 }
 
-private fun isFilled(mem: Mem, count: Int): Boolean {
+private fun zedVars(count: Int) = sequence {
     for (i in 0 ..< count) {
-        val varName = "z" + i.toString().padStart(2, '0')
-        if (mem.contains(varName)) {
-            val v = mem[varName]
-            if (v == null) {
-                println("$varName is null. returning false")
-                return false
-            }
-        } else {
-            println("$varName is exhausted. returning false")
+        yield("z${i.toString().padStart(2, '0')}")
+    }
+}
+
+private fun isFilled(mem: Mem, count: Int): Boolean {
+    for (varName in zedVars(count)) {
+        if (mem[varName] == null) {
+            //println("$varName is null. returning false")
             return false
         }
     }
@@ -68,8 +63,7 @@ private fun isFilled(mem: Mem, count: Int): Boolean {
 
 private fun getValue(mem: Mem, count: Int): Long {
     var res = 0L
-    for (i in 0 ..< count) {
-        val varName = "z" + i.toString().padStart(2, '0')
+    for ((i, varName) in zedVars(count).withIndex()) {
         res += (2.0.pow(i) * mem[varName]!!).toLong()
     }
     return res
@@ -78,11 +72,11 @@ private fun getValue(mem: Mem, count: Int): Long {
 private fun Run(pair: Pair<Mem, List<Tuple4>>, count: Int): Long {
     var memPrev = pair.first
     val tuples = pair.second
-    var mem: Mem// = memPrev.toMutableMap()
+    var mem: Mem
 
     while (!isFilled(memPrev, count)) {
         mem = memPrev.toMutableMap()
-        println(mem)
+        //println(mem)
         for ((a, op, b, c) in tuples) {
             val vA = mem[a]
             val vB = mem[b]
@@ -94,7 +88,7 @@ private fun Run(pair: Pair<Mem, List<Tuple4>>, count: Int): Long {
             }
             mem[c] = vC
         }
-        println(mem)
+        //println(mem)
         memPrev = mem
     }
 
@@ -107,7 +101,7 @@ fun main() {
         val v2 = Run(parse(readInput("24t2")), 12); check(v2 == 2024L)
         val r = parse(readInput("24"))
         val v3 = Run(r, 46)
-        println("Answer to part 1: $v3") // 14336575033938 low
+        println("Answer to part 1: $v3")
     }
     println(dt)
 }

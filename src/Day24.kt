@@ -2,10 +2,34 @@ import java.io.File
 import kotlin.math.pow
 import kotlin.time.measureTime
 
+/*
+full adder for n-bit numbers
+
+inputs:
+- X0, .., n-1
+- Y0, .., n-1
+
+gates:
+- 2n XOR gates
+- 2n AND gates
+-  n OR  gates
+
+output:
+- Z0, ... n-1
+- Cout
+
+for layer i:
+- Xi XOR Yi   -> Pi
+- Pi XOR Ci-1 -> Zi
+- Xi AND Yi   -> Gi
+- Pi AND Ci-1 -> Hi
+- Hi OR  Gi   -> Ci
+*/
+
+
 private typealias Mem = MutableMap<String, Int?>
 
 private data class Tuple4(val a: String, val op: String, val b: String, val c: String)
-
 
 private fun dotGraph(pair: Pair<Mem, List<Tuple4>>): String {
     val (mem, tuples) = pair
@@ -95,38 +119,35 @@ private fun Xor(a: Int?, b: Int?): Int? {
     return 0
 }
 
-private fun zedVars(count: Int) = sequence {
-    for (i in 0 ..< count) {
-        yield("z${i.toString().padStart(2, '0')}")
+private fun zedVars(tuples: List<Tuple4>) = sequence {
+    for (t in tuples) {
+        if (t.c.startsWith("z")) yield(t.c);
     }
 }
 
-private fun isFilled(mem: Mem, count: Int): Boolean {
-    for (varName in zedVars(count)) {
-        if (mem[varName] == null) {
-            //println("$varName is null. returning false")
-            return false
-        }
+private fun isFilled(mem: Mem, zv:List<String>): Boolean {
+    for (varName in zv) {
+        if (mem[varName] == null) return false
     }
     return true
 }
 
-private fun getValue(mem: Mem, count: Int): Long {
+private fun getValue(mem: Mem, zv:List<String>): Long {
     var res = 0L
-    for ((i, varName) in zedVars(count).withIndex()) {
+    for ((i, varName) in zv.withIndex()) {
         res += (2.0.pow(i) * mem[varName]!!).toLong()
     }
     return res
 }
 
-private fun Run(pair: Pair<Mem, List<Tuple4>>, count: Int): Long {
+private fun Run(pair: Pair<Mem, List<Tuple4>>): Long {
     var memPrev = pair.first
     val tuples = pair.second
     var mem: Mem
+    val zv = zedVars(tuples).toList().sorted()
 
-    while (!isFilled(memPrev, count)) {
+    while (!isFilled(memPrev, zv)) {
         mem = memPrev.toMutableMap()
-        //println(mem)
         for ((a, op, b, c) in tuples) {
             val vA = mem[a]
             val vB = mem[b]
@@ -138,32 +159,29 @@ private fun Run(pair: Pair<Mem, List<Tuple4>>, count: Int): Long {
             }
             mem[c] = vC
         }
-        //println(mem)
         memPrev = mem
     }
 
-    println(memPrev.keys)
-
-    return getValue(memPrev, count)
+    return getValue(memPrev, zv)
 }
 
 fun main() {
     val dt = measureTime {
         val iT1 = parse(readInput("24t1"))
-        val oT1 = Run(iT1, 3)
+        val oT1 = Run(iT1)
         check(oT1 == 4L)
 
         val iT2 = parse(readInput("24t2"))
-        val oT2 = Run(iT2, 12)
+        val oT2 = Run(iT2)
         check(oT2 == 2024L)
 
         val i = parse(readInput("24"))
-        val o = Run(i, 46)
+        val o = Run(i)
         println("Answer to part 1: $o")
 
-        File("extras/24/t1.dot").writeText(dotGraph(iT1))
+        /*File("extras/24/t1.dot").writeText(dotGraph(iT1))
         File("extras/24/t2.dot").writeText(dotGraph(iT2))
-        File("extras/24/prob.dot").writeText(dotGraph(i))
+        File("extras/24/prob.dot").writeText(dotGraph(i))*/
     }
     println(dt)
 }

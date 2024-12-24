@@ -101,3 +101,16 @@ fun abTo(maxAmount: Int) = sequence {
         }
     }
 }
+
+class MaxTracker<T, J: Comparable<J>>(private val heuristic: (T) -> J, private val startScore: J) {
+    var maxItem: T? = null
+    var maxScore: J = startScore
+
+    fun add(item: T) {
+        val score = heuristic(item)
+        if (score > maxScore) {
+            maxItem = item
+            maxScore = score
+        }
+    }
+}

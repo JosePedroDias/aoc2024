@@ -11,7 +11,7 @@
 - 09 Disk Fragmenter
 - 10 Hoof It
 - 11 Plutonian Pebbles
-- 12 Garden Groups           *
+- 12 Garden Groups
 - 13 Claw Contraption
 - 14 Restroom Redoubt
 - 15 Warehouse Woes          **
@@ -26,4 +26,4 @@
 - 24 Crossed Wires           *
 - 25 Code Chronicle          *
 
-left: 1 + 2 + 2 + 1 + 2 + 1 + 2 + 2 + 1 + 1 = 15
+left: 2 + 2 + 1 + 2 + 1 + 2 + 2 + 1 + 1 = 14

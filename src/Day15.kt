@@ -97,31 +97,28 @@ private class Matrix6 {
 
     fun find(chTarget: Char): Pos4? {
         for ((p, ch) in m.entries) {
-            if (ch == chTarget) {
-                return p
-            }
+            if (ch == chTarget) return p
         }
         return null
     }
 
     fun findAll(chTarget: Char) = sequence {
         for ((p, ch) in m.entries) {
-            if (ch == chTarget) {
-                yield(p)
-            }
+            if (ch == chTarget) yield(p)
         }
     }
 
     override fun toString(): String {
         val sb = StringBuilder()
         for (y in ranges[1]) {
-            for (x in ranges[0]) { sb.append(this[Pos4(x, y)]) }
+            for (x in ranges[0]) sb.append(this[Pos4(x, y)])
             sb.append('\n')
         }
         return sb.toString()
     }
 
     fun toStringWithRobot(p: Pos4): String {
+        check(m[p] == EMPTY)
         m[p] = ROBOT
         val s = toString()
         m[p] = EMPTY
@@ -137,21 +134,22 @@ private fun part1(st: State, debug: Boolean = false): Int {
     val (m, moves, p) = st
     if (debug) println(m.toStringWithRobot(p))
 
-    val numBoxesStart = m.findAll(BOX).count()
-
     moves.forEachIndexed { nth, d ->
         var isNoop = false
-        val positionsToMove = mutableListOf<Pos4>()
+        val boxPositionsToMove = mutableListOf<Pos4>()
         var pt = p.move(d)
 
         while (true) {
             when (m[pt]) {
                 EMPTY -> break
-                WALL -> { isNoop = true; break }
-                BOX -> positionsToMove.add(pt)
+                WALL -> {
+                    isNoop = true
+                    boxPositionsToMove.clear()
+                    break
+                }
+                BOX -> boxPositionsToMove.add(pt)
                 else -> throw Error("unexpected")
             }
-            //m[p] = EMPTY
             pt = pt.move(d)
         }
 
@@ -159,23 +157,14 @@ private fun part1(st: State, debug: Boolean = false): Int {
             if (debug) println("#$nth: $d -> stuck: noop")
         } else {
             if (debug) {
-                if (positionsToMove.size > 0) println("#$nth: $d -> robot drags ${positionsToMove.size} boxes")
+                if (boxPositionsToMove.size > 0) println("#$nth: $d -> robot drags ${boxPositionsToMove.size} boxes")
                 else println("#$nth: $d -> robot moves")
             }
-            m[p] = EMPTY // TODO
-            p += d
-            m[p] = EMPTY
-
-            if (positionsToMove.size > 0) { // TODO
-                //for (pb in positionsToMove) { m[pb] = EMPTY }
-                //positionsToMove.map { it.move(d) } .forEach { m[it] = BOX }
-                m[positionsToMove.first()] = EMPTY
-                m[positionsToMove.last().move(d)] = BOX
+            if (boxPositionsToMove.size > 0) {
+                boxPositionsToMove.forEach { m[it]         = EMPTY }
+                boxPositionsToMove.forEach { m[it.move(d)] = BOX   }
             }
-
-            // TODO
-            val numBoxes = m.findAll(BOX).count()
-            check(numBoxes == numBoxesStart) { println(m.toStringWithRobot(p)); "$nth oops ($numBoxesStart -> $numBoxes)" }
+            p += d
         }
         if (debug) println(m.toStringWithRobot(p))
     }
@@ -188,25 +177,17 @@ private fun part1(st: State, debug: Boolean = false): Int {
 
 fun main() {
     val dt = measureTime {
-        val st2 = parse(readInput("15t2"))
-        val numBoxes2a = st2.first.findAll(BOX).count()
-        val res2 = part1(st2)
-        val numBoxes2b = st2.first.findAll(BOX).count()
-        println("$numBoxes2a $numBoxes2b")
-        check(numBoxes2a == numBoxes2b)
-        check(res2 == 2028)
-
         val st1 = parse(readInput("15t1"))
-        val numBoxes1a = st1.first.findAll(BOX).count()
-        val res1 = part1(st1, true)
-        val numBoxes1b = st1.first.findAll(BOX).count()
-        println("$numBoxes1a $numBoxes1b")
-        check(numBoxes1a == numBoxes1b)
-        check(res1 == 10092)
+        val res1 = part1(st1)
+        check(res1 == 2028)
 
-        //val s = parse(readInput("15"))
-        //val resp1 = part1(s)
-        //println("Answer to part 1: $resp1")
+        val st2 = parse(readInput("15t2"))
+        val res2 = part1(st2)
+        check(res2 == 10092)
+
+        val s = parse(readInput("15"))
+        val res = part1(s)
+        println("Answer to part 1: $res")
     }
     println(dt)
 }

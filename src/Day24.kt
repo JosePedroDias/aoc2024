@@ -163,54 +163,22 @@ private fun longBinary(v: ULong, len: Int): String {
     return v.toString(radix = 2).padStart(len, '0')
 }
 
-/*
-private fun swap(tuples: List<Tuple4>, idx1: Int, idx2: Int):List<Tuple4> {
-    val newTuples = tuples.toMutableList()
-
-    val t1 = tuples.get(idx1)
-    val t2 = tuples.get(idx2)
-
-    println(listOf(t1, t2))
-
-    newTuples[idx1] = t1.withNewC(t2.c)
-    newTuples[idx2] = t2.withNewC(t1.c)
-
-    return newTuples
+private fun swap(statements: Statements, k1: String, k2: String) {
+    val t1 = statements[k1]!!
+    val t2 = statements[k2]!!
+    println("$k1 <-> $k1")
+    println("  $k1 = $t2")
+    println("  $k2 = $t1")
+    statements[k1] = t2
+    statements[k2] = t1
 }
-
-private fun swapByLabels(tuples: List<Tuple4>, l1: String, l2: String, nth0: Int? = null, nth1: Int? = null):List<Tuple4> {
-    val candidates = mutableListOf<Tuple4>()
-    val indices = mutableListOf<Int>()
-    tuples.forEachIndexed { idx, tup ->
-        if (tup.hasLabel(l1) || tup.hasLabel(l2)) {
-            indices.add(idx)
-            candidates.add(tup)
-        }
-    }
-
-    if (nth0 != null && nth1 != null) {
-        return swap(tuples, indices[nth0], indices[nth1])
-    }
-
-    check(indices.size == 2, { "too many candidates:\n${candidates.joinToString("\n")}" })
-    val (i1, i2) = indices
-    return swap(tuples, i1, i2)
-}
-
-private fun swapByCs(tuples: List<Tuple4>, c1: String, c2: String):List<Tuple4> {
-    val i1 = tuples.indexOfFirst { it.c == c1 }
-    val i2 = tuples.indexOfFirst { it.c == c2 }
-    return swap(tuples, i1, i2)
-}
-*/
 
 private fun validateAdder(pair: Pair<Mem, Statements>) {
     val (mem_, statements) = pair
 
     val (ix, iy) = inVars(mem_)
 
-    val bits = ix.size
-    check(iy.size == bits)
+    val bits = ix.size; check(iy.size == bits)
 
     for (bit in 0..< bits) {
         val expectedNum = 1UL.shl(bit)
@@ -219,13 +187,13 @@ private fun validateAdder(pair: Pair<Mem, Statements>) {
         setValue(mem1, ix, expectedNum)
         setValue(mem1, iy, 0U)
         val res1 = run(Pair(mem1, statements))
-        check(res1 == expectedNum, { "exp:${longBinary(expectedNum, bits)}, res1:${longBinary(res1, bits)}" })
+        check(res1 == expectedNum, { "i:$bit, exp:${longBinary(expectedNum, bits)}, res1:${longBinary(res1, bits)}" })
 
         val mem2 = mem_.toMutableMap()
         setValue(mem2, ix, 0U)
         setValue(mem2, iy, expectedNum)
         val res2 = run(Pair(mem2, statements))
-        check(res2 == expectedNum, { "exp:${longBinary(expectedNum, bits)}, res2:${longBinary(res2, bits)}" })
+        check(res2 == expectedNum, { "i:$bit, exp:${longBinary(expectedNum, bits)}, res2:${longBinary(res2, bits)}" })
     }
 }
 
@@ -234,8 +202,7 @@ private fun validateAdder2(pair: Pair<Mem, Statements>) {
 
     val (ix, iy) = inVars(mem_)
 
-    val bits = ix.size
-    check(iy.size == bits)
+    val bits = ix.size; check(iy.size == bits)
 
     val with = listOf(
         //Pair(0UL, 0UL),
@@ -261,80 +228,103 @@ private fun validateAdder2(pair: Pair<Mem, Statements>) {
     }
 }
 
+private fun checkStructure(pair: Pair<Mem, Statements>) {
+    val (mem, statements) = pair
+
+    val (ix, iy) = inVars(mem)
+    val oz = outVars(statements)
+
+    fun statementsHavingOp(k: String): Map<String, Triple<String, String, String>> {
+        return statements.filter { it.value.second == k || it.value.third == k }
+    }
+
+    fun statementsReturning(k: String): Map<String, Triple<String, String, String>> {
+        return statements.filter { it.key == k }
+    }
+
+    for (bit in ix.indices) {
+        val kX = ix[bit]
+        val kY = iy[bit]
+        val kZ = oz[bit]
+        println("\n** bit: $bit -> $kX $kY $kZ **")
+
+        val havingX = statementsHavingOp(kX)
+        val havingY = statementsHavingOp(kY)
+        val havingZ = statementsReturning(kZ)
+
+        for (sWithX in havingX) println("XX: $sWithX")
+        check(havingX.size == 2)
+        val xXor = havingX.entries.find { (k, v) -> v.first == "XOR" }!!
+        val xAnd = havingX.entries.find { (k, v) -> v.first == "AND" }!!
+
+        for (sWithY in havingY) println("YY: $sWithY")
+        check(havingY.size == 2)
+        val yXor = havingY.entries.find { (k, v) -> v.first == "XOR" }!!
+        val yAnd = havingY.entries.find { (k, v) -> v.first == "AND" }!!
+
+        for (sWithZ in havingZ) println("ZZ: $sWithZ")
+        check(havingZ.size == 1)
+
+        val candidates: Statements = mutableMapOf()
+        statementsHavingOp(xXor.key).forEach { (k, v) -> candidates[k] = v }
+        statementsHavingOp(xAnd.key).forEach { (k, v) -> candidates[k] = v }
+        statementsHavingOp(yXor.key).forEach { (k, v) -> candidates[k] = v }
+        statementsHavingOp(yAnd.key).forEach { (k, v) -> candidates[k] = v }
+        //println(candidates)
+
+        if (bit > 0) {
+            val (t1, t2, t3) = candidates.values.toList()
+            println(candidates.entries.joinToString("\n"))
+            check(listOf("XOR", "AND").contains(t1.first), { "t1 is ${t1.first}" })
+            check(listOf("XOR", "AND").contains(t2.first), { "t2 is ${t2.first}" })
+            check(t3.first == "OR", { "t3 is ${t3.first}" })
+        }
+
+        val zXor = havingZ.entries.find { (_, v) -> v.first == "XOR" }!!
+    }
+}
+
 fun main() {
     val dt = measureTime {
         val iT1 = parse(readInput("24t1"))
         val iT2 = parse(readInput("24t2"))
-        //val iT3 = parse(readInput("24t3"))
-        val i = parse(readInput("24"))
+        var i = parse(readInput("24"))
 
         val oT1 = run(iT1)
         check(oT1 == 4UL)
-        //ValidateAdder(iT1)
 
         val oT2 = run(iT2)
         check(oT2 == 2024UL)
 
-        //ValidateAdder(iT3)
-
         val o = run(i)
         println("Answer to part 1: $o")
 
-        val i2 = Pair(i.first, i.second.toMutableMap())
+        i = parse(readInput("24"))
 
-        validateAdder(i2)
-        validateAdder2(i2)
+        val mem = i.first
+        val statements = i.second.toMutableMap()
+        val i2 = Pair(mem, statements)
+
+        // swap incorrect wires
+        swap(statements, "gjc", "qjj") // bit 11
+        swap(statements, "z17", "wmp") // bit 17
+        swap(statements, "z26", "gvm") // bit 26
+        swap(statements, "z39", "qsb") // bit 39
+
+        checkStructure(i2)
 
         File("extras/24/prob.dot").writeText(dotGraph(i.second))
         File("extras/24/probFixed.dot").writeText(dotGraph(i2.second))
 
-        /*
-        var (mem, tuples) = i
-
-        // broken at bit 11
-        //tuples = swapByLabels(tuples, "y11", "x11") // gjc, gvm
-        tuples = swapByCs(tuples, "gjc", "qjj")
-
-        // z should come from XOR from AND and XOR (z17!)
-        //tuples = swapByCs(tuples, "rqq", "pqv")
-        //tuples = swapByLabels(tuples, "z17", "pqv")
-        // broken at bit 16 | wkv rcr | x16 y16 z16 | twg vwv nsf dmw pvh
-        //tuples = swapByCs(tuples, "z17", "ffg")
-        //tuples = swapByCs(tuples, "vwv", "dmw")
-        //tuples = swapByCs(tuples, "x16", "z16") //
-
-        // broken at bit 17
-        //tuples = swapByCs(tuples, "y17", "x17") // rqq, pqv
-
-        // broken at bit 26
-        //tuples = swapByCs(tuples, "y26", "x26")
-        //tuples = swapByCs(tuples, "z26", "kfq", 1, 2) // z26, gvm
-
-        // broken at bit 39
-        //tuples = swapByCs(tuples, "y39", "x39") // z39, sbq
+        validateAdder(i2)
+        validateAdder2(i2)
 
         println(mutableListOf(
             "gjc", "qjj",
-            "rqq", "pqv",
+            "z17", "wmp",
             "z26", "gvm",
-            "z39", "sbq",
+            "z39", "qsb",
         ).sorted().joinToString(","))
-
-        val i2 = Pair(mem, tuples)
-
-        val p = process(i2)
-        for (k in p.keys.filter { it.contains("xor") }) println(p[k])
-        //for (k in p.keys.filter { it.contains("17") }) println(p[k])
-
-        ValidateAdder2(i2)
-        //ValidateAdder(i2)
-
-        //File("extras/24/t1.dot").writeText(dotGraph(iT1))
-        //File("extras/24/t2.dot").writeText(dotGraph(iT2))
-        File("extras/24/prob.dot").writeText(dotGraph(i))
-        File("extras/24/probFixed.dot").writeText(dotGraph(i2))
-
-         */
     }
     println(dt)
 }

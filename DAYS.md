@@ -23,7 +23,7 @@
 - 21 Keypad Conundrum        **
 - 22 Monkey Market
 - 23 LAN Party
-- 24 Crossed Wires           *
+- 24 Crossed Wires
 - 25 Code Chronicle          *
 
-left: 2 + 2 + 1 + 2 + 1 + 2 + 2 + 1 + 1 = 14
+left: 2 + 2 + 1 + 2 + 1 + 2 + 2 + 1 = 13

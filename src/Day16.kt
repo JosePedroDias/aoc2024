@@ -1,5 +1,4 @@
 import java.util.*
-import kotlin.math.absoluteValue
 import kotlin.time.measureTime
 
 private const val START = 'S'
@@ -9,20 +8,6 @@ private const val WALL = '#'
 
 private const val MOVE_SCORE = 1
 private const val TURN_SCORE = 1000
-
-private interface Addable<T> {
-    operator fun plus(other: T): T
-}
-
-private data class AddableInt(val value: Int) : Addable<AddableInt>, Comparable<AddableInt> {
-    override operator fun plus(other: AddableInt): AddableInt {
-        return AddableInt(this.value + other.value)
-    }
-
-    override operator fun compareTo(other: AddableInt): Int {
-        return this.value.compareTo(other.value)
-    }
-}
 
 private fun <E>dijkstra(
     graph: Map<E, List<Pair<E, Int>>>,
@@ -51,49 +36,44 @@ private fun <E>dijkstra(
     return distances
 }
 
-private fun <E>augmentedDijkstra(
-    graph: Map<E, List<Triple<E, Int, Decision>>>,
-    startEdge: E):
-        Pair<MutableMap<E, Int>, MutableMap<E, MutableList<Decision>>> {
-    val distances = mutableMapOf<E, Int>().withDefault { Int.MAX_VALUE }
-    val decisions = mutableMapOf<E, MutableList<Decision>>()
-    val priorityQueue = PriorityQueue<Triple<E, Int, MutableList<Decision>>>(compareBy { it.second })
-    val visited = mutableSetOf<Pair<E, List<Decision>>>()
+private fun augmentedDijkstra(
+    graph: Map<DirPos, List<Triple<DirPos, Int, Pos7>>>,
+    startEdge: DirPos):
+        Pair<MutableMap<DirPos, Int>, MutableMap<DirPos, MutableSet<Pos7>>>
+{
+    val distances = mutableMapOf<DirPos, Int>().withDefault { Int.MAX_VALUE }
+    val positions = mutableMapOf<DirPos, MutableSet<Pos7>>()
+    val priorityQueue = PriorityQueue<Triple<DirPos, Int, MutableSet<Pos7>>>(compareBy { it.second })
+    val visited = mutableSetOf<Pair<DirPos, Int>>()
 
-    priorityQueue.add(Triple(startEdge, 0, mutableListOf()))
+    priorityQueue.add(Triple(startEdge, 0, mutableSetOf(startEdge.pos)))
     distances[startEdge] = 0
-    decisions[startEdge] = mutableListOf()
+    positions[startEdge] = mutableSetOf(startEdge.pos)
 
     while (priorityQueue.isNotEmpty()) {
-        val (node, currentDist, currentDecisions) = priorityQueue.poll()
-        if (visited.add(Pair(node, currentDecisions))) {
-            graph[node]?.forEach { (adjacent, weight, decision) ->
+        val (node, currentDist, currentPositions) = priorityQueue.poll()
+        if (visited.add(Pair(node, currentDist))) {
+            graph[node]?.forEach { (adjacent, weight, pos) ->
                 val totalDist = currentDist + weight
-                val totalDecisions = currentDecisions.toMutableList()
-                totalDecisions.add(decision)
+                val totalPos = currentPositions.toMutableSet()
+                totalPos.add(pos)
                 val dist = distances.getValue(adjacent)
                 if (totalDist < dist) {
                     distances[adjacent] = totalDist
-                    decisions[adjacent] = totalDecisions
-                    priorityQueue.add(Triple(adjacent, totalDist, totalDecisions))
+                    positions[adjacent] = totalPos
+                    priorityQueue.add(Triple(adjacent, totalDist, totalPos))
                 }
             }
         }
     }
 
-    return Pair(distances, decisions)
+    return Pair(distances, positions)
 }
 
 
 private enum class Dir4 { N, E, S, W }
 
-private enum class Decision { F, L, R }
-
 private data class Pos7(val x: Int, val y: Int) {
-    fun manhattan(p: Pos7): Int {
-        return (x - p.x).absoluteValue + (y - p.y).absoluteValue
-    }
-
     override fun toString(): String {
         return "($x,$y)"
     }
@@ -118,14 +98,6 @@ private data class DirPos(val dir: Dir4, val pos: Pos7) {
     fun right(): DirPos {
         val dir2 = Dir4.entries[(dir.ordinal + 1) % Dir4.entries.size]
         return DirPos(dir2, pos)
-    }
-
-    fun act(d: Decision): DirPos {
-        return when (d) {
-            Decision.F -> fwd()
-            Decision.L -> left()
-            Decision.R -> right()
-        }
     }
 }
 
@@ -214,41 +186,34 @@ private fun shortestPath(p: Prob16): Int {
 }
 
 private fun shortestPath2(p: Prob16): Int {
-    val graph = mutableMapOf<DirPos, List<Triple<DirPos, Int, Decision>>>()
+    val graph = mutableMapOf<DirPos, List<Triple<DirPos, Int, Pos7>>>()
     for (edge in p.edges) {
         val edgeLeft = edge.left()
         val edgeRight = edge.right()
         val edgeFwd = edge.fwd()
 
         val lst = mutableListOf(
-            Triple(edgeLeft, TURN_SCORE, Decision.L),
-            Triple(edgeRight, TURN_SCORE, Decision.R),
+            Triple(edgeLeft, TURN_SCORE, edgeLeft.pos),
+            Triple(edgeRight, TURN_SCORE, edgeRight.pos),
         )
 
         if (p.edges.contains(edgeFwd)) {
-            lst.add(Triple(edgeFwd, MOVE_SCORE, Decision.F))
+            lst.add(Triple(edgeFwd, MOVE_SCORE, edgeFwd.pos))
         }
 
         graph[edge] = lst
     }
 
-    val (_, decisions) = augmentedDijkstra(graph, p.startDP)
+    val (_, ways) = augmentedDijkstra(graph, p.startDP)
 
     val goalEdges = Dir4.entries.map { DirPos(it, p.goalPos) }
-
-    val ways = goalEdges.map { decisions[it]!! }
-
     val positions = mutableSetOf<Pos7>()
-    for (way in ways) {
-        var dp = p.startDP
-        positions.add(dp.pos)
-        for (d in way) {
-            dp = dp.act(d)
-            positions.add(dp.pos)
-        }
+    for (ge in goalEdges) {
+        val way = ways[ge]!!
+        for (pos in way) positions.add(pos)
     }
 
-    println(p.mtx.toString { p -> if (positions.contains(p)) 'O' else null })
+    println(p.mtx.toString { pos -> if (positions.contains(pos)) 'O' else null })
     println(positions.size)
 
     return positions.size
@@ -272,6 +237,8 @@ fun main() {
 
         val oT1b = shortestPath2(iT1)
         //check(oT1b == 45)
+
+        //return
 
         val oT2b = shortestPath2(iT2)
         //check(oT2b == 64)

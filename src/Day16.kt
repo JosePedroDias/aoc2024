@@ -1,12 +1,43 @@
+import java.util.*
 import kotlin.math.absoluteValue
 import kotlin.time.measureTime
 
 private const val START = 'S'
 private const val END = 'E'
 private const val EMPTY = '.'
+private const val WALL = '#'
 
 private const val MOVE_SCORE = 1
 private const val TURN_SCORE = 1000
+
+private val edges = mutableSetOf<DirPos>()
+
+// graph: fromId, list <to, cost>
+// start: id of the start edge
+private fun dijkstra(graph: Map<Int, List<Pair<Int, Int>>>, start: Int): Map<Int, Int> {
+    val distances = mutableMapOf<Int, Int>().withDefault { Int.MAX_VALUE }
+    val priorityQueue = PriorityQueue<Pair<Int, Int>>(compareBy { it.second })
+    val visited = mutableSetOf<Pair<Int, Int>>()
+
+    priorityQueue.add(Pair(start, 0))
+    distances[start] = 0
+
+    while (priorityQueue.isNotEmpty()) {
+        val (node, currentDist) = priorityQueue.poll()
+        if (visited.add(Pair(node, currentDist))) {
+            graph[node]?.forEach { (adjacent, weight) ->
+                val totalDist = currentDist + weight
+                if (totalDist < distances.getValue(adjacent)) {
+                    distances[adjacent] = totalDist
+                    priorityQueue.add(Pair(adjacent, totalDist))
+                }
+            }
+        }
+    }
+
+    return distances
+}
+
 
 private enum class Dir4 { N, E, S, W }
 
@@ -52,58 +83,6 @@ private data class DirPos(val dir: Dir4, val pos: Pos7) {
     }
 }
 
-private data class State2(val pos: Pos7, val posStart: Pos7, val posGoal: Pos7, val dir: Dir4, val score: Int, val decisions: List<Decision>) {
-    fun moveForward(): State2 {
-        val pos2 = when (dir) {
-            Dir4.N -> Pos7(pos.x, pos.y - 1)
-            Dir4.E -> Pos7(pos.x + 1, pos.y)
-            Dir4.S -> Pos7(pos.x, pos.y + 1)
-            Dir4.W -> Pos7(pos.x - 1, pos.y)
-        }
-        val de = decisions.toMutableList(); de.add(Decision.F)
-        return State2(pos2, posStart, posGoal, dir, score + MOVE_SCORE, de)
-    }
-
-    fun turnLeft(): State2 {
-        val dir2 = Dir4.entries[(dir.ordinal + Dir4.entries.size - 1) % Dir4.entries.size]
-        val de = decisions.toMutableList(); de.add(Decision.L)
-        return State2(pos, posStart, posGoal, dir2, score + TURN_SCORE, de)
-    }
-
-    fun turnRight(): State2 {
-        val dir2 = Dir4.entries[(dir.ordinal + 1) % Dir4.entries.size]
-        val de = decisions.toMutableList(); de.add(Decision.R)
-        return State2(pos, posStart, posGoal, dir2, score + TURN_SCORE, de)
-    }
-
-    fun isInGoal(): Boolean {
-        return pos == posGoal
-    }
-
-    fun dir2Arrow(dir: Dir4): Char {
-        return when(dir) {
-            Dir4.N -> '^'
-            Dir4.E -> '>'
-            Dir4.S -> 'v'
-            Dir4.W -> '<'
-            else -> throw Error("unexpected")
-        }
-    }
-
-    fun toString(m: Matrix7): String {
-        val path = mutableMapOf<Pos7, Char>()
-        var dp = DirPos(Dir4.E, posStart)
-
-        path[dp.pos] = dir2Arrow(dp.dir)
-        for (d in decisions) {
-            dp = dp.act(d)
-            path[dp.pos] = dir2Arrow(dp.dir)
-        }
-
-        return m.toStringSpecial { p -> path[p] }
-    }
-}
-
 private data class Matrix7(val w: Int, val h: Int) {
     private val m: MutableMap<Pos7, Char> = mutableMapOf()
     private var ranges = arrayOf(0..< w, 0..< h)
@@ -116,29 +95,7 @@ private data class Matrix7(val w: Int, val h: Int) {
         return m.getOrDefault(p, '.')
     }
 
-    fun isVisitable(p: Pos7): Boolean {
-        return m[p] == EMPTY
-    }
-
-    fun find(chTarget: Char): Pos7? {
-        for ((p, ch) in m.entries) {
-            if (ch == chTarget) return p
-        }
-        return null
-    }
-
-    override fun toString(): String {
-        val sb = StringBuilder()
-        for (y in ranges[1]) {
-            for (x in ranges[0]) {
-                sb.append(this[Pos7(x, y)])
-            }
-            sb.append('\n')
-        }
-        return sb.toString()
-    }
-
-    fun toStringSpecial(fn: (p: Pos7) -> Char?): String {
+    fun toString(fn: (p: Pos7) -> Char? = { null }): String {
         val sb = StringBuilder()
         for (y in ranges[1]) {
             for (x in ranges[0]) {
@@ -152,79 +109,89 @@ private data class Matrix7(val w: Int, val h: Int) {
     }
 }
 
-private fun parse(lines: List<String>): Pair<Matrix7, State2> {
+private data class Prob16(val mtx: Matrix7, val edges: MutableSet<DirPos>, val startDP: DirPos, val goalPos: Pos7)
+
+private fun parse(lines: List<String>): Prob16 {
     val w = lines[0].length
     val h = lines.size
-    val m = Matrix7(w, h)
+
+    val mtx = Matrix7(w, h)
+    val edges = mutableSetOf<DirPos>()
+    var startDP: DirPos? = null
+    var goalPos: Pos7? = null
+
     lines.forEachIndexed { y, l ->
-        l.forEachIndexed { x, ch -> m[Pos7(x, y)] = ch }
+        l.forEachIndexed { x, ch ->
+            val isStart = ch == START
+            val isGoal = ch == END
+            val isVisitable = ch == EMPTY || isStart || isGoal
+            mtx[Pos7(x, y)] = if (isVisitable) EMPTY else WALL
+            val p = Pos7(x, y)
+            if (isVisitable) {
+                for (d in Dir4.entries) {
+                    edges.add(DirPos(d, p))
+                }
+                if (isStart) startDP = DirPos(Dir4.E, p)
+                else if (isGoal) goalPos = p
+            }
+        }
     }
 
-    val posStart = m.find(START)
-    check(posStart != null)
-    m[posStart] = EMPTY
-
-    val posEnd = m.find(END)
-    check(posEnd != null)
-    m[posEnd] = EMPTY
-
-    return Pair(m, State2(posStart, posStart, posEnd, Dir4.E, 0, listOf()))
+    return Prob16(mtx, edges, startDP!!, goalPos!!)
 }
 
-private fun part1(m: Matrix7, st: State2, debug: Boolean = false): Int {
-    val visitedHeadings = mutableSetOf<Pair<Pos7, Dir4>>()
-    val todo = mutableListOf(st)
-    val successStates =  mutableListOf<State2>()
-    if (debug) println("start pos: ${st.pos}")
+private fun shortestPath(p: Prob16): Int {
+    //println(p.mtx.toString { null })
 
-    while (todo.size > 0) {
-        val currentSt = todo.removeFirst()
-        val candidates = listOf(
-            currentSt.moveForward(),
-            currentSt.turnLeft(),
-            currentSt.turnRight(),
-        ).filter {
-            if (visitedHeadings.contains(Pair(it.pos, it.dir))) false
-            else if (!m.isVisitable(it.pos)) false
-            else if (it.isInGoal()) {
-                successStates.add(it)
-                true
-            }
-            else true
-        }
-        val pairs = candidates.map { Pair(it, it.pos.manhattan(currentSt.posGoal)) }
-        pairs.sortedBy { it.second }
-        val sortedCandidates = pairs.map { it.first }
-        visitedHeadings.add(Pair(currentSt.pos, currentSt.dir))
-        todo += sortedCandidates
+    val edgeToId = mutableMapOf<DirPos, Int>()
+    val idToEdge = mutableMapOf<Int, DirPos>()
+    p.edges.toList().forEachIndexed { id, edge ->
+        edgeToId[edge] = id
+        idToEdge[id] = edge
     }
 
-    check(successStates.size > 0)
+    val graph = mutableMapOf<Int, List<Pair<Int, Int>>>()
+    for (edge in p.edges) {
+        val lst = mutableListOf(
+            Pair(edgeToId[edge.left()]!!, TURN_SCORE),
+            Pair(edgeToId[edge.right()]!!, TURN_SCORE),
+        )
 
-    successStates.sortBy { it.score }
-    val bestState = successStates.first()
-    if (debug) println(bestState)
-    if (debug) println(bestState.toString(m))
-    if (debug) println("best score: ${bestState.score} (out of ${successStates.size})")
-    if (debug) println("best decisions: ${bestState.decisions}")
+        val edgeFwd = edge.fwd()
+        if (edgeToId.containsKey(edgeFwd)) {
+            lst.add(Pair(edgeToId[edgeFwd]!!, MOVE_SCORE))
+        }
 
-    return bestState.score
+        graph[edgeToId[edge]!!] = lst
+    }
+
+    val costs = dijkstra(graph, edgeToId[p.startDP]!!)
+
+    val goalEdges = Dir4.entries.map { DirPos(it, p.goalPos) }
+    val goalEdgeIds = goalEdges.map { edgeToId[it]!! }
+    val costsToGoal = goalEdgeIds.map { costs[it]!! }.sorted()
+
+    //println(costsToGoal)
+    return costsToGoal[0]
 }
 
 fun main() {
     val dt = measureTime {
-        val (mT1, sT1) = parse(readInput("16t1"))
-        val oT1 = part1(mT1, sT1, true)
-        //check(oT1 == 7036) // TODO too high
+        val iT1 = parse(readInput("16t1"))
+        //println(iT1.mtx.toString { null })
+        //println(iT1.edges.size)
+        //println(iT1.startDP)
+        //println(iT1.goalPos)
+        val oT1 = shortestPath(iT1)
+        check(oT1 == 7036)
 
-        val (mT2, sT2) = parse(readInput("16t2"))
-        val oT2 = part1(mT2, sT2, true)
-        //check(oT2 == 11048) // TODO too high */
+        val iT2 = parse(readInput("16t2"))
+        val oT2 = shortestPath(iT2)
+        check(oT2 == 11048)
 
-        /* val (m, s) = parse(readInput("16"))
-        val o1 = part1(m, s, true)
-        println(s.toString(m)) // TODO where's the route?!
-        println("Answer to part 1: $o1") // 92364 X 10028 */
+        val iP = parse(readInput("16"))
+        val o1 = shortestPath(iP)
+        println("Answer to part 1: $o1")
     }
     println(dt)
 }

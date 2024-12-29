@@ -40,7 +40,7 @@ private fun parse(lines: List<String>, scale: Int = 1): State {
                 }
                 if (obs != null) {
                     m[p] = obs
-                    m.move(obs, Dir3.NONE)
+                    m.move(listOf(obs), Dir3.NONE)
                 }
             }
         } else {
@@ -106,20 +106,35 @@ private class Matrix6(val scale: Int) {
         return m.getOrDefault(p, null)
     }
 
-    fun canMove(obs: Obstacle, d: Dir3): Boolean {
-        val le = obs.repr.length
-        val p = if (d == Dir3.R && le > 1) Pos4(obs.p.x - 1 + le, obs.p.y) else obs.p
-        return m[p.move(d)] == null
+    fun canItMove(obs: Obstacle, d: Dir3, visited: MutableSet<Obstacle> = mutableSetOf()): Pair<Boolean, Set<Obstacle>> {
+        visited.add(obs)
+        val len = obs.repr.length
+        val found = mutableSetOf<Obstacle>()
+        for (dx in 0..< len) {
+            val p = Pos4(obs.p.x + dx, obs.p.y).move(d)
+            val other = m[p]
+            if (other != null && !visited.contains(other)) {
+                if (!other.movable) return Pair(false, setOf())
+                val (b, s) = canItMove(other, d, visited)
+                if (!b) return Pair(false, setOf())
+                found.add(other)
+                for (o in s) found.add(o)
+            }
+        }
+        return Pair(true, found)
     }
 
-    fun move(obs: Obstacle, d: Dir3) {
-        val len = obs.repr.length
+    fun move(movables: List<Obstacle>, d: Dir3) {
+        if (movables.isEmpty()) return
+        val len = movables[0].repr.length
         for (dx in 0..< len) {
-            m.remove(Pos4(obs.p.x + dx, obs.p.y))
+            for (obs in movables) m.remove(Pos4(obs.p.x + dx, obs.p.y))
         }
-        obs.p += d
+
+        for (obs in movables) obs.p += d
+
         for (dx in 0..< scale) {
-            m[Pos4(obs.p.x + dx, obs.p.y)] = obs
+            for (obs in movables) m[Pos4(obs.p.x + dx, obs.p.y)] = obs
         }
     }
 
@@ -189,34 +204,39 @@ private fun part1(st: State, debug: Boolean = false): Int {
         var pt = p.move(d)
 
         while (true) {
-            val obs = m[pt]
-            if (obs == null) {
-                break
-            } else if (obs.movable) {
-                toMove.add(obs)
-            } else {
-                isNoop = true
-                toMove.clear()
-                break
+            val obs = m[pt] ?: break
+            if (obs.movable) {
+                val (b, s) = m.canItMove(obs, d)
+                if (b) {
+                    toMove.add(obs)
+                    for (o in s) toMove.add(o)
+                    pt = pt.move(d)
+                    continue
+                }
             }
-            pt = pt.move(d)
+            isNoop = true
+            toMove.clear()
+            break
         }
 
         if (isNoop) {
             if (debug) println("#$nth: $d -> stuck: noop")
         } else {
+            val countBefore = m.getBoxes().count()
             if (debug) {
                 if (toMove.size > 0) println("#$nth: $d -> robot drags ${toMove.size} boxes")
                 else println("#$nth: $d -> robot moves")
             }
-            for (obs in toMove) m.move(obs, d)
+            m.move(toMove.toList(), d)
             p += d
+            val countAfter = m.getBoxes().count()
+            check(countAfter == countBefore, { "$countAfter != $countBefore" })
         }
         if (debug) println(m)
     }
 
     val sum = m.getBoxes().sumOf { it.p.toGps() }
-    println("sum: $sum")
+    //println("sum: $sum")
     return sum
 }
 
@@ -234,17 +254,17 @@ fun main() {
         val res = part1(s, false)
         println("Answer to part 1: $res")
 
-        val st1b = parse(readInput("15t1"), 2)
-        val res1b = part1(st1b, false)
-        //check(res1b == 2028)
+        val st3b = parse(readInput("15t3"), 2)
+        val res1b = part1(st3b, false)
+        check(res1b == 618)
 
         val st2b = parse(readInput("15t2"), 2)
         val res2b = part1(st2b, false)
-        //check(res2b == 9021)
+        check(res2b == 9021)
 
         val sb = parse(readInput("15"), 2)
-        val resB = part1(s, false)
-        println("Answer to part 2: $resB")
+        val resB = part1(sb, false)
+        println("Answer to part 2: $resB") // 618
     }
     println(dt)
 }

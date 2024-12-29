@@ -1,87 +1,89 @@
-import kotlin.math.pow
 import kotlin.time.measureTime
 
-const val OP_JNZ = 3
+const val OP_JNZ = 3L
 
-private data class PS(var rA: Int, var rB: Int, var rC: Int, var program: List<Int>, val outs: MutableList<Int> = mutableListOf()) {
+private data class PS(var rA: Long, var rB: Long, var rC: Long, var program: List<Long>, val outs: MutableList<Long> = mutableListOf()) {
     var ip: Int = 0 // +2 except jump, end once past program size
     var p = fun(s: String) {}
     var pp = fun(s: String) {}
 
-    fun combo(i: Int): Int {
+    fun combo(i: Long): Long {
         return when (i) {
-            0 -> 0
-            1 -> 1
-            2 -> 2
-            3 -> 3
-            4 -> rA
-            5 -> rB
-            6 -> rC
+            0L -> 0L
+            1L -> 1L
+            2L -> 2L
+            3L -> 3L
+            4L -> rA
+            5L -> rB
+            6L -> rC
             else -> throw Error("unexpected combo: $i")
         }
     }
 
-    // opcode 0 C
-    fun adv(v_: Int) {
+    // opcode 0 C - rA =/ 2powN (loses N bits)
+    fun adv(v_: Long) {
         val v = combo((v_))
-        pp("adv($v_/$v', rA:$rA)")
-        //rA = (rA / 2.0.pow(v)).toInt()
-        rA = rA.shr(v)
-        p(" = $rA (rA)")
+        pp("adv($v_/$v', A:${bin(rA)})")
+        rA = rA.shr(v.toInt())
+        p("->${bin(rA)}(A)")
     }
 
-    // opcode 1 L
-    fun bxl(v: Int) {
-        pp("bxl($v, rB:$rB)")
+    // opcode 1 L - B = B xor N
+    fun bxl(v: Long) {
+        pp("bxl($v, B:${bin(rB)})")
         rB = rB.xor(v)
-        p(" = $rB (rB)")
+        p("->${bin(rB)}(B)")
     }
 
-    // opcode 2 C
-    fun bst(v_: Int) {
+    // opcode 2 C - (4:A -> B becomes mod 8 of argument)
+    fun bst(v_: Long) {
         val v = combo(v_)
         pp("bst($v_/$v')")
         rB = v % 8
-        p(" = $rB (rB)")
+        p("->${bin(rB)}(B)")
     }
 
-    // opcode 3 L
-    fun jnz(v: Int) {
-        pp("jnz($v, rA:$rA)")
-        ip = if (rA != 0) v else ip + 1
-        p("$ip (ip)")
+    // opcode 3 L - jumps to value if not zero
+    fun jnz(v: Long) {
+        pp("jnz($v, A:${bin(rA)})")
+        ip = if (rA != 0L) v.toInt() else ip + 1
+        p("->$ip(ip)")
     }
 
     // opcode 4 ?
     fun bxc() {
-        pp("bxc(rB:$rB, rC:$rC)")
+        pp("bxc(B:${bin(rB)}, C:${bin(rC)})")
         rB = rB.xor(rC)
-        p("$rB (rB)")
+        p("->${bin(rB)}(B)")
     }
 
-    // opcode 5 C
-    fun out(v_: Int) {
+    // opcode 5 C (if 4=A, 5=B) ~ outs mod 8
+    fun out(v_: Long) {
         val v = combo(v_)
-        p("out($v_/$v')")
-        val m8 = v % 8
+        pp("out($v_/$v')")
+        val m8 = v % 8L
         outs.add(m8)
-        //println(m8)
+        p("->${outs.joinToString(",")}(out)")
     }
 
     // opcode 6 C
-    fun bdv(v_: Int) {
+    fun bdv(v_: Long) {
         val v = combo(v_)
-        pp("bdv($v_/$v', rA:$rA)")
-        rB = rA.shr(v)
-        p("$rB (rB)")
+        pp("bdv($v_/$v', A:${bin(rA)})")
+        rB = rA.shr(v.toInt())
+        p("->${bin(rB)}(B)")
     }
 
-    // opcode 7 C
-    fun cdv(v_: Int) {
+    // opcode 7 C - shift right /= 2powN (5=B) ~ to C
+    fun cdv(v_: Long) {
         val v = combo(v_)
-        pp("cdv($v_/$v', rA:$rA)")
-        rC = rA.shr(v)
-        p("$rC (rC)")
+        pp("cdv($v_/$v', A:${bin(rA)})")
+        rC = rA.shr(v.toInt())
+        p("->${bin(rC)}(C)")
+    }
+
+    fun bin(n: Long): String {
+        return n.toString(radix = 2).windowed(3, 3).joinToString(" ") + "($n)"
     }
 
     fun run(debug: Boolean = false) {
@@ -90,32 +92,35 @@ private data class PS(var rA: Int, var rB: Int, var rC: Int, var program: List<I
             pp = fun(s: String) { print(s) }
         }
 
-        //p("PROGRAM: $program")
+        p("\n         ${program.indices.map{ it / 10 }.joinToString(" ")}")
+        p("         ${program.indices.map{ it % 10 }.joinToString(" ")}")
+        p("program: ${program.joinToString(",")}")
         while (ip < program.size) {
             val op = program[ip++]
             val v = program[ip]
-            p("** ip:${ip-1}, ip+1:${ip}, op:$op, v:$v, rA:$rA, rB:$rB, rC:$rC **")
+            p("- ip:${ip-1} A:${bin(rA)} B:${bin(rB)} C:${bin(rC)} -")
             when (op) {
-                0 -> adv(v)
-                1 -> bxl(v)
-                2 -> bst(v)
-                3 -> jnz(v)
-                4 -> bxc()
-                5 -> out(v)
-                6 -> bdv(v)
-                7 -> cdv(v)
+                0L -> adv(v)
+                1L -> bxl(v)
+                2L -> bst(v)
+                3L -> jnz(v)
+                4L -> bxc()
+                5L -> out(v)
+                6L -> bdv(v)
+                7L -> cdv(v)
                 else -> throw Error("unexpected opcode: $op")
             }
             if (op != OP_JNZ) ++ip
         }
+        p("program ended.")
     }
 }
 
 private fun parse(lines: List<String>): PS {
-    val rA = lines[0].split(": ")[1].toInt()
-    val rB = lines[1].split(": ")[1].toInt()
-    val rC = lines[2].split(": ")[1].toInt()
-    val prog = lines[4].split(": ")[1].split(",").map { it.toInt() }
+    val rA = lines[0].split(": ")[1].toLong()
+    val rB = lines[1].split(": ")[1].toLong()
+    val rC = lines[2].split(": ")[1].toLong()
+    val prog = lines[4].split(": ")[1].split(",").map { it.toLong() }
     return PS(rA, rB, rC, prog)
 }
 
@@ -123,67 +128,147 @@ fun main() {
     val dt = measureTime {
         val t1 = PS(0, 0, 9, listOf(2, 6))
         t1.run()
-        check(t1.rA == 0)
-        check(t1.rB == 1) // fails
-        check(t1.rC == 9)
+        check(t1.rA == 0L)
+        check(t1.rB == 1L) // fails
+        check(t1.rC == 9L)
         check(t1.outs.isEmpty())
 
-        val t2 = PS(10, 0, 0, listOf(5, 0, 5, 1, 5, 4))
+        val t2 = PS(10, 0, 0, listOf(5L, 0L, 5L, 1L, 5L, 4L))
         t2.run()
-        check(t2.rA == 10)
-        check(t2.rB == 0)
-        check(t2.rC == 0)
-        check(t2.outs == listOf(0, 1, 2))
+        check(t2.rA == 10L)
+        check(t2.rB == 0L)
+        check(t2.rC == 0L)
+        check(t2.outs == listOf(0L, 1L, 2L))
 
-        val t3 = PS(2024, 0, 0, listOf(0,1,5,4,3,0))
+        val t3 = PS(2024, 0, 0, listOf(0L, 1L, 5L, 4L, 3L, 0L))
         t3.run()
-        check(t3.rA == 0)
-        check(t3.rB == 0)
-        check(t3.rC == 0)
-        check(t3.outs == listOf(4,2,5,6,7,7,7,7,3,1,0))
+        check(t3.rA == 0L)
+        check(t3.rB == 0L)
+        check(t3.rC == 0L)
+        check(t3.outs == listOf(4L, 2L, 5L, 6L, 7L, 7L, 7L, 7L, 3L, 1L, 0))
 
-        val t4 = PS(0, 29, 0, listOf(1,7))
+        val t4 = PS(0, 29, 0, listOf(1L, 7L))
         t4.run()
-        check(t4.rA == 0)
-        check(t4.rB == 26)
-        check(t4.rC == 0)
-        check(t4.outs == listOf<Int>())
+        check(t4.rA == 0L)
+        check(t4.rB == 26L)
+        check(t4.rC == 0L)
+        check(t4.outs == listOf<Long>())
 
-        val t5 = PS(0, 2024, 43690, listOf(4,0))
+        val t5 = PS(0, 2024, 43690, listOf(4L, 0L))
         t5.run()
-        check(t5.rA == 0)
-        check(t5.rB == 44354)
-        check(t5.rC == 43690)
-        check(t5.outs == listOf<Int>())
+        check(t5.rA == 0L)
+        check(t5.rB == 44354L)
+        check(t5.rC == 43690L)
+        check(t5.outs == listOf<Long>())
 
         val pT1 = parse(readInput("17t1"))
-        println(pT1)
+        //println(pT1)
         pT1.run()
-        println(pT1)
-        check(pT1.outs == listOf(4,6,3,5,6,3,5,2,1,0))
+        //println(pT1)
+        check(pT1.outs == listOf(4L, 6L, 3L, 5L, 6L, 3L, 5L, 2L, 1L, 0L))
 
-        println("----")
+        //println("----")
 
         val p = parse(readInput("17"))
-        println(p)
+        //println(p)
         p.run()
-        println(p)
+        //println(p)
         println("Answer to part 1: ${p.outs.joinToString(",")}")
 
         // part 2
+        val ps = PS(2024, 0, 0, listOf(0L, 3L, 5L, 4L, 3L, 0L))
+        ps.rA = 117440
+        ps.run(false)
+        check(ps.program == ps.outs, { "${ps.outs} != ${ps.program}" })
 
-        val ri = readInput("17")
-        for (rA in 0..Int.MAX_VALUE) {
-            if (rA % 100000 == 0) println("$rA of ${Int.MAX_VALUE} (${rA.toFloat()/Int.MAX_VALUE.toFloat() * 100})")
-            val pp = parse(ri)
-            pp.rA = rA
-            pp.run()
-            if (pp.program == pp.outs) {
-                println("Answer to part 2: $rA}")
-                break
-            }
-        }
-        println("ALL DONE")
+        val a0 = revEngReversed(listOf(2L, 4L, 1L, 1L, 7L, 5L, 1L, 5L, 4L, 2L, 5L, 5L, 0L, 3L, 3L, 0L))
+
+        //println("----- a0: $a0 -----")
+        val outs = revEng(a0)
+        //println(outs)
+
+        val p2 = parse(readInput("17"))
+        p2.rA = a0 //6.shl(3)
+        p2.run(false)
+        check(p2.program == p2.outs, { "${p2.outs} != ${p2.program}" })
+        println("Answer to part 2: $a0")
     }
     println(dt)
+}
+
+private fun revEng(a0: Long, showOutChanges: Boolean = false): List<Long> {
+    var a = a0
+    var b = 0L
+    var c = 0L
+    val outs = mutableListOf<Long>()
+
+    do {
+        // ip:0 | bst(4/6')-> b = a % 8 (B)
+        b = a % 8 // B becomes the smaller 3 bits of A
+
+        // ip:2 | bxl(1, B:110(6))->111(7)(B)
+        b = b.xor(1) // negates 1st bit of B
+
+        // ip:4 | cdv(5/7', A:110(6))->(0)(C)
+        c = a.shr(b.toInt()) // C is then used in B = B.xor(C)
+
+        // ip:6 | bxl(5, B)->(2)(B)
+        b = b.xor(5) // B is set multiple times above...
+
+        // ip:8 | bxc(B:2, C:(0))->(2)(B)
+        b = b.xor(c)
+
+        // ip:10 | out(5/2')->2(out)
+        outs.add(b % 8L)
+        if (showOutChanges) println(outs)
+
+        // ip:12 | adv(3/3', A:110(6))->(0)(A)
+        a = a.shr(3)
+
+        // ip:14 | jnz(0, A:(0))->16(ip)
+    } while (a != 0L)
+
+    return outs
+}
+
+private fun revEngReversed(program: List<Long>): Long {
+    /*
+    // KUDOS to 0xdf for the strategy
+    candidates = [0]
+    for l in range(len(program)):
+        next_candidates = []
+        for val in candidates:
+            for i in range(8):
+                target = (val << 3) + i
+                if computer(target) = program[-l-1:]:
+                    next_candidates.append(target)
+        candidates = next_candidates
+        print(candidates)
+     */
+
+    val pLen = program.size
+    var candidates = mutableListOf<Long>(0)
+    for ((outIdx, outVal) in program.withIndex().reversed()) {
+        val targetProg = program.subList(outIdx, pLen)
+        //println("outIdx: $outIdx, outVal: $outVal, tgt: $targetProg")
+        val nextCandidates = mutableListOf<Long>()
+        for (candidate in candidates) {
+            for (i in 0 until 8) {
+                val target = candidate.shl(3) + i
+                val gotProg = revEng(target)
+                //print("~> $gotProg")
+                if (gotProg == targetProg) {
+                    //println(" OK!")
+                    nextCandidates.add(target)
+                } else {
+                    //println(" X")
+                }
+            }
+        }
+        candidates = nextCandidates
+        //println("CANDIDATES: $candidates")
+    }
+
+    //println(candidates)
+    return candidates.min()
 }

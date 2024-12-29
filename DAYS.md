@@ -16,7 +16,7 @@
 - 14 Restroom Redoubt
 - 15 Warehouse Woes
 - 16 Reindeer Maze
-- 17 Chronospatial Computer  *
+- 17 Chronospatial Computer
 - 18 RAM Run                 **
 - 19 Linen Layout            *
 - 20 Race Condition          **
@@ -26,4 +26,4 @@
 - 24 Crossed Wires
 - 25 Code Chronicle          *
 
-left: 1 + 2 + 1 + 2 + 2 + 1 = 9
+left: 2 + 1 + 2 + 2 + 1 = 8

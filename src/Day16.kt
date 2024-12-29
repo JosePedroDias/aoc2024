@@ -10,8 +10,6 @@ private const val WALL = '#'
 private const val MOVE_SCORE = 1
 private const val TURN_SCORE = 1000
 
-private val edges = mutableSetOf<DirPos>()
-
 // graph: fromId, list <to, cost>
 // start: id of the start edge
 private fun dijkstra(graph: Map<Int, List<Pair<Int, Int>>>, start: Int): Map<Int, Int> {
@@ -36,6 +34,39 @@ private fun dijkstra(graph: Map<Int, List<Pair<Int, Int>>>, start: Int): Map<Int
     }
 
     return distances
+}
+
+private fun augmentedDijkstra(
+    graph: Map<Int, List<Triple<Int, Int, Pos7>>>,
+    start: Int,
+    startPos: Pos7):
+        Pair<MutableMap<Int, Int>, MutableMap<Int, Set<Pos7>>> {
+    val distances = mutableMapOf<Int, Int>().withDefault { Int.MAX_VALUE }
+    val positions = mutableMapOf<Int, Set<Pos7>>()
+    val priorityQueue = PriorityQueue<Triple<Int, Int, Set<Pos7>>>(compareBy { it.second })
+    val visited = mutableSetOf<Pair<Int, Set<Pos7>>>()
+
+    priorityQueue.add(Triple(start, 0, setOf(startPos)))
+    distances[start] = 0
+    positions[start] = setOf(startPos)
+
+    while (priorityQueue.isNotEmpty()) {
+        val (node, currentDist, currentSet) = priorityQueue.poll()
+        if (visited.add(Pair(node, currentSet))) {
+            graph[node]?.forEach { (adjacent, weight, s) ->
+                val totalDist = currentDist + weight
+                val totalSet = currentSet + s
+                if (totalDist <= distances.getValue(adjacent)) {
+                    distances[adjacent] = totalDist
+                    // this was tricky!
+                    positions[adjacent] = (positions[adjacent] ?: setOf()) + totalSet
+                    priorityQueue.add(Triple(adjacent, totalDist, totalSet))
+                }
+            }
+        }
+    }
+
+    return Pair(distances, positions)
 }
 
 
@@ -175,13 +206,52 @@ private fun shortestPath(p: Prob16): Int {
     return costsToGoal[0]
 }
 
+private fun shortestPath2(p: Prob16): Int {
+    val edgeToId = mutableMapOf<DirPos, Int>()
+    val idToEdge = mutableMapOf<Int, DirPos>()
+    p.edges.toList().forEachIndexed { id, edge ->
+        edgeToId[edge] = id
+        idToEdge[id] = edge
+    }
+
+    val graph = mutableMapOf<Int, List<Triple<Int, Int, Pos7>>>()
+    for (edge in p.edges) {
+        val edgeLeft = edge.left()
+        val edgeRight = edge.right()
+        val edgeFwd = edge.fwd()
+
+        val lst = mutableListOf(
+            Triple(edgeToId[edgeLeft]!!, TURN_SCORE, edgeLeft.pos),
+            Triple(edgeToId[edgeRight]!!, TURN_SCORE, edgeRight.pos),
+        )
+
+        if (edgeToId.containsKey(edgeFwd)) {
+            lst.add(Triple(edgeToId[edgeFwd]!!, MOVE_SCORE, edgeFwd.pos))
+        }
+
+        graph[edgeToId[edge]!!] = lst
+    }
+
+    val (_, positions) = augmentedDijkstra(graph, edgeToId[p.startDP]!!, p.startDP.pos)
+
+    val goalEdges = Dir4.entries.map { DirPos(it, p.goalPos) }
+    val goalEdgeIds = goalEdges.map { edgeToId[it]!! }
+
+    val path = mutableSetOf<Pos7>()
+    for (id in goalEdgeIds) {
+        val thesePositions = positions[id]!!
+        path += thesePositions
+    }
+
+    println(p.mtx.toString { p -> if (path.contains(p)) 'O' else null })
+    println(path.size)
+
+    return path.size
+}
+
 fun main() {
     val dt = measureTime {
         val iT1 = parse(readInput("16t1"))
-        //println(iT1.mtx.toString { null })
-        //println(iT1.edges.size)
-        //println(iT1.startDP)
-        //println(iT1.goalPos)
         val oT1 = shortestPath(iT1)
         check(oT1 == 7036)
 
@@ -190,8 +260,20 @@ fun main() {
         check(oT2 == 11048)
 
         val iP = parse(readInput("16"))
-        val o1 = shortestPath(iP)
-        println("Answer to part 1: $o1")
+        val oP = shortestPath(iP)
+        println("Answer to part 1: $oP")
+
+        //
+
+        val oT1b = shortestPath2(iT1)
+        check(oT1b == 45)
+
+        val oT2b = shortestPath2(iT2)
+        check(oT2b == 64)
+
+        val iPb = parse(readInput("16"))
+        val oPb = shortestPath2(iPb)
+        println("Answer to part 1: $oPb")
     }
     println(dt)
 }

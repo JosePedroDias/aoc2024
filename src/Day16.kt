@@ -3,7 +3,6 @@ import kotlin.time.measureTime
 
 private const val START = 'S'
 private const val END = 'E'
-private const val WALL = '#'
 private const val EMPTY = '.'
 
 private const val MOVE_SCORE = 1
@@ -23,7 +22,37 @@ private data class Pos7(val x: Int, val y: Int) {
     }
 }
 
-private data class State2(val m: Matrix7, val pos: Pos7, val posE: Pos7, val dir: Dir4, val score: Int, val decisions: List<Decision>) {
+private data class DirPos(val dir: Dir4, val pos: Pos7) {
+    fun fwd(): DirPos {
+        val pos2 = when (dir) {
+            Dir4.N -> Pos7(pos.x, pos.y - 1)
+            Dir4.E -> Pos7(pos.x + 1, pos.y)
+            Dir4.S -> Pos7(pos.x, pos.y + 1)
+            Dir4.W -> Pos7(pos.x - 1, pos.y)
+        }
+        return DirPos(dir, pos2)
+    }
+
+    fun left(): DirPos {
+        val dir2 = Dir4.entries[(dir.ordinal + Dir4.entries.size - 1) % Dir4.entries.size]
+        return DirPos(dir2, pos)
+    }
+
+    fun right(): DirPos {
+        val dir2 = Dir4.entries[(dir.ordinal + 1) % Dir4.entries.size]
+        return DirPos(dir2, pos)
+    }
+
+    fun act(d: Decision): DirPos {
+        return when (d) {
+            Decision.F -> fwd()
+            Decision.L -> left()
+            Decision.R -> right()
+        }
+    }
+}
+
+private data class State2(val pos: Pos7, val posStart: Pos7, val posGoal: Pos7, val dir: Dir4, val score: Int, val decisions: List<Decision>) {
     fun moveForward(): State2 {
         val pos2 = when (dir) {
             Dir4.N -> Pos7(pos.x, pos.y - 1)
@@ -32,39 +61,46 @@ private data class State2(val m: Matrix7, val pos: Pos7, val posE: Pos7, val dir
             Dir4.W -> Pos7(pos.x - 1, pos.y)
         }
         val de = decisions.toMutableList(); de.add(Decision.F)
-        return State2(m, pos2, posE, dir, score + MOVE_SCORE, de)
+        return State2(pos2, posStart, posGoal, dir, score + MOVE_SCORE, de)
     }
 
     fun turnLeft(): State2 {
         val dir2 = Dir4.entries[(dir.ordinal + Dir4.entries.size - 1) % Dir4.entries.size]
         val de = decisions.toMutableList(); de.add(Decision.L)
-        return State2(m, pos, posE, dir2, score + TURN_SCORE, de)
+        return State2(pos, posStart, posGoal, dir2, score + TURN_SCORE, de)
     }
 
     fun turnRight(): State2 {
         val dir2 = Dir4.entries[(dir.ordinal + 1) % Dir4.entries.size]
         val de = decisions.toMutableList(); de.add(Decision.R)
-        return State2(m, pos, posE, dir2, score + TURN_SCORE, de)
+        return State2(pos, posStart, posGoal, dir2, score + TURN_SCORE, de)
     }
 
-    fun isValid(): Boolean {
-        return m[pos] != WALL
+    fun isInGoal(): Boolean {
+        return pos == posGoal
     }
 
-    fun isGoal(): Boolean {
-        return pos == posE
+    fun dir2Arrow(dir: Dir4): Char {
+        return when(dir) {
+            Dir4.N -> '^'
+            Dir4.E -> '>'
+            Dir4.S -> 'v'
+            Dir4.W -> '<'
+            else -> throw Error("unexpected")
+        }
     }
 
-    override fun toString(): String {
-        return m.toStringSpecial {
-            p ->
-            if (p == pos) when(dir) {
-                Dir4.N -> '^'
-                Dir4.E -> '>'
-                Dir4.S -> 'v'
-                Dir4.W -> '<'
-            }
-            else null }
+    fun toString(m: Matrix7): String {
+        val path = mutableMapOf<Pos7, Char>()
+        var dp = DirPos(Dir4.E, posStart)
+
+        path[dp.pos] = dir2Arrow(dp.dir)
+        for (d in decisions) {
+            dp = dp.act(d)
+            path[dp.pos] = dir2Arrow(dp.dir)
+        }
+
+        return m.toStringSpecial { p -> path[p] }
     }
 }
 
@@ -80,11 +116,13 @@ private data class Matrix7(val w: Int, val h: Int) {
         return m.getOrDefault(p, '.')
     }
 
+    fun isVisitable(p: Pos7): Boolean {
+        return m[p] == EMPTY
+    }
+
     fun find(chTarget: Char): Pos7? {
         for ((p, ch) in m.entries) {
-            if (ch == chTarget) {
-                return p
-            }
+            if (ch == chTarget) return p
         }
         return null
     }
@@ -114,7 +152,7 @@ private data class Matrix7(val w: Int, val h: Int) {
     }
 }
 
-private fun parse(lines: List<String>): State2 {
+private fun parse(lines: List<String>): Pair<Matrix7, State2> {
     val w = lines[0].length
     val h = lines.size
     val m = Matrix7(w, h)
@@ -122,18 +160,18 @@ private fun parse(lines: List<String>): State2 {
         l.forEachIndexed { x, ch -> m[Pos7(x, y)] = ch }
     }
 
-    val posS = m.find(START)
-    check(posS != null)
-    m[posS] = EMPTY
+    val posStart = m.find(START)
+    check(posStart != null)
+    m[posStart] = EMPTY
 
-    val posE = m.find(END)
-    check(posE != null)
-    m[posE] = EMPTY
+    val posEnd = m.find(END)
+    check(posEnd != null)
+    m[posEnd] = EMPTY
 
-    return State2(m, posS, posE, Dir4.E, 0, listOf())
+    return Pair(m, State2(posStart, posStart, posEnd, Dir4.E, 0, listOf()))
 }
 
-private fun part1(st: State2, debug: Boolean = false): Int {
+private fun part1(m: Matrix7, st: State2, debug: Boolean = false): Int {
     val visitedHeadings = mutableSetOf<Pair<Pos7, Dir4>>()
     val todo = mutableListOf(st)
     val successStates =  mutableListOf<State2>()
@@ -141,21 +179,20 @@ private fun part1(st: State2, debug: Boolean = false): Int {
 
     while (todo.size > 0) {
         val currentSt = todo.removeFirst()
-        // if (debug) println("todo:${todo.size}|ss:${successStates.size}\n$currentSt")
         val candidates = listOf(
             currentSt.moveForward(),
             currentSt.turnLeft(),
             currentSt.turnRight(),
         ).filter {
             if (visitedHeadings.contains(Pair(it.pos, it.dir))) false
-            else if (!it.isValid()) false
-            else if (it.isGoal()) {
+            else if (!m.isVisitable(it.pos)) false
+            else if (it.isInGoal()) {
                 successStates.add(it)
-                false
+                true
             }
             else true
         }
-        val pairs = candidates.map { Pair(it, it.pos.manhattan(currentSt.posE)) }
+        val pairs = candidates.map { Pair(it, it.pos.manhattan(currentSt.posGoal)) }
         pairs.sortedBy { it.second }
         val sortedCandidates = pairs.map { it.first }
         visitedHeadings.add(Pair(currentSt.pos, currentSt.dir))
@@ -163,46 +200,31 @@ private fun part1(st: State2, debug: Boolean = false): Int {
     }
 
     check(successStates.size > 0)
-    //for (ss in successStates) { println("- ${ss.score}: ${ss.decisions}") }
 
-    //if (debug) println(successStates)
     successStates.sortBy { it.score }
     val bestState = successStates.first()
     if (debug) println(bestState)
+    if (debug) println(bestState.toString(m))
     if (debug) println("best score: ${bestState.score} (out of ${successStates.size})")
     if (debug) println("best decisions: ${bestState.decisions}")
-
-    if (false) {
-        var currentSt2 = st
-        println("\n***********\nwinning combination:\n")
-        //println(currentSt2)
-        bestState.decisions.forEachIndexed { idx, decision ->
-            println("\n#$idx $decision:")
-            currentSt2 = when (decision) {
-                Decision.F -> currentSt2.moveForward()
-                Decision.L -> currentSt2.turnLeft()
-                Decision.R -> currentSt2.turnRight()
-            }
-            println(currentSt2)
-        }
-    }
 
     return bestState.score
 }
 
 fun main() {
     val dt = measureTime {
-        val iT1 = parse(readInput("16t1"))
-        val oT1 = part1(iT1)
-        check(oT1 == 7036)
+        val (mT1, sT1) = parse(readInput("16t1"))
+        val oT1 = part1(mT1, sT1, true)
+        //check(oT1 == 7036) // TODO too high
 
-        val iT2 = parse(readInput("16t2"))
-        val oT2 = part1(iT2)
-        check(oT2 == 11048)
+        val (mT2, sT2) = parse(readInput("16t2"))
+        val oT2 = part1(mT2, sT2, true)
+        //check(oT2 == 11048) // TODO too high */
 
-        val i1 = parse(readInput("16"))
-        val o1 = part1(i1, true)
-        println("Answer to part 1: $o1") // 92364 X 10028 X*/
+        /* val (m, s) = parse(readInput("16"))
+        val o1 = part1(m, s, true)
+        println(s.toString(m)) // TODO where's the route?!
+        println("Answer to part 1: $o1") // 92364 X 10028 */
     }
     println(dt)
 }

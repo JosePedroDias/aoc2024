@@ -1,4 +1,5 @@
 import java.util.*
+import kotlin.collections.ArrayDeque
 import kotlin.time.measureTime
 
 private const val START = 'S'
@@ -37,39 +38,44 @@ private fun <E>dijkstra(
 }
 
 private fun augmentedDijkstra(
-    graph: Map<DirPos, List<Triple<DirPos, Int, Pos7>>>,
-    startEdge: DirPos):
-        Pair<MutableMap<DirPos, Int>, MutableMap<DirPos, MutableSet<Pos7>>>
+    graph: Map<DirPos, List<Pair<DirPos, Int>>>,
+    startEdge: DirPos,
+    goalEdge: DirPos):
+        MutableMap<DirPos, MutableSet<DirPos>>
 {
-    val distances = mutableMapOf<DirPos, Int>().withDefault { Int.MAX_VALUE }
-    val positions = mutableMapOf<DirPos, MutableSet<Pos7>>()
-    val priorityQueue = PriorityQueue<Triple<DirPos, Int, MutableSet<Pos7>>>(compareBy { it.second })
-    val visited = mutableSetOf<Pair<DirPos, Int>>()
+    val priorityQueue = PriorityQueue<Triple<Int, DirPos, DirPos?>>(compareBy { it.first })
+    val lowestCost = mutableMapOf<DirPos, Int>().withDefault { Int.MAX_VALUE }
+    var bestCost = Int.MAX_VALUE
+    val backtrack = mutableMapOf<DirPos, MutableSet<DirPos>>()
 
-    priorityQueue.add(Triple(startEdge, 0, mutableSetOf(startEdge.pos)))
-    distances[startEdge] = 0
-    positions[startEdge] = mutableSetOf(startEdge.pos)
+    priorityQueue.add(Triple(0, startEdge, null))
+    lowestCost[startEdge] = 0
 
     while (priorityQueue.isNotEmpty()) {
-        val (node, currentDist, currentPositions) = priorityQueue.poll()
-        if (visited.add(Pair(node, currentDist))) {
-            graph[node]?.forEach { (adjacent, weight, pos) ->
-                val totalDist = currentDist + weight
-                val totalPos = currentPositions.toMutableSet()
-                totalPos.add(pos)
-                val dist = distances.getValue(adjacent)
-                if (totalDist < dist) {
-                    distances[adjacent] = totalDist
-                    positions[adjacent] = totalPos
-                    priorityQueue.add(Triple(adjacent, totalDist, totalPos))
-                }
+        val (cost, node, prevNode) = priorityQueue.poll()
+        if (cost > lowestCost.getValue(node)) continue
+        lowestCost[node] = cost
+        if (node == goalEdge) {
+            if (cost > bestCost) break
+            bestCost = cost
+        }
+        if (prevNode != null) {
+            val bag = backtrack[node] ?: mutableSetOf()
+            bag.add(prevNode)
+            backtrack[node] = bag
+        }
+        val neighbours = graph[node]
+        if (neighbours != null) {
+            for ((adjacent, costInc) in neighbours) {
+                val newCost = cost + costInc
+                if (cost > lowestCost.getValue(adjacent)) continue
+                priorityQueue.add(Triple(newCost, adjacent, node))
             }
         }
     }
 
-    return Pair(distances, positions)
+    return backtrack
 }
-
 
 private enum class Dir4 { N, E, S, W }
 
@@ -185,38 +191,44 @@ private fun shortestPath(p: Prob16): Int {
     return costsToGoal[0]
 }
 
-private fun shortestPath2(p: Prob16): Int {
-    val graph = mutableMapOf<DirPos, List<Triple<DirPos, Int, Pos7>>>()
+private fun shortestPath2(p: Prob16, goalDir: Dir4): Int {
+    val graph = mutableMapOf<DirPos, List<Pair<DirPos, Int>>>()
     for (edge in p.edges) {
         val edgeLeft = edge.left()
         val edgeRight = edge.right()
         val edgeFwd = edge.fwd()
 
         val lst = mutableListOf(
-            Triple(edgeLeft, TURN_SCORE, edgeLeft.pos),
-            Triple(edgeRight, TURN_SCORE, edgeRight.pos),
+            Pair(edgeLeft, TURN_SCORE),
+            Pair(edgeRight, TURN_SCORE),
         )
-
-        if (p.edges.contains(edgeFwd)) {
-            lst.add(Triple(edgeFwd, MOVE_SCORE, edgeFwd.pos))
-        }
+        if (p.edges.contains(edgeFwd)) lst.add(Pair(edgeFwd, MOVE_SCORE))
 
         graph[edge] = lst
     }
 
-    val (_, ways) = augmentedDijkstra(graph, p.startDP)
+    val goalDP = DirPos(goalDir, p.goalPos)
+    val bt = augmentedDijkstra(graph, p.startDP, goalDP)
 
-    val goalEdges = Dir4.entries.map { DirPos(it, p.goalPos) }
-    val positions = mutableSetOf<Pos7>()
-    for (ge in goalEdges) {
-        val way = ways[ge]!!
-        for (pos in way) positions.add(pos)
+    // get back positions from backtrack (back fill)
+    val states = ArrayDeque(listOf(goalDP))
+    val seen = mutableSetOf(goalDP)
+
+    while (states.size > 0) {
+        val key = states.removeFirst()
+        val bag = bt[key] ?: mutableSetOf()
+        for (last in bag) {
+            if (seen.contains(last)) continue
+            seen.add(last)
+            states.add(last)
+        }
     }
 
-    println(p.mtx.toString { pos -> if (positions.contains(pos)) 'O' else null })
-    println(positions.size)
+    val tiles = seen.map { it.pos }.toSet()
 
-    return positions.size
+    //println(p.mtx.toString { pos -> if (tiles.contains(pos)) 'O' else null })
+
+    return tiles.size
 }
 
 fun main() {
@@ -235,17 +247,15 @@ fun main() {
 
         //
 
-        val oT1b = shortestPath2(iT1)
-        //check(oT1b == 45)
+        val oT1b = shortestPath2(iT1, Dir4.N)
+        check(oT1b == 45, { "$oT1b != 45" })
 
-        //return
-
-        val oT2b = shortestPath2(iT2)
-        //check(oT2b == 64)
+        val oT2b = shortestPath2(iT2, Dir4.N)
+        check(oT2b == 64, { "$oT2b != 64" })
 
         val iPb = parse(readInput("16"))
-        val oPb = shortestPath2(iPb)
-        println("Answer to part 1: $oPb")
+        val oPb = shortestPath2(iPb, Dir4.E)
+        println("Answer to part 2: $oPb")
     }
     println(dt)
 }

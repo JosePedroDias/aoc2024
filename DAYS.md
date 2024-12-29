@@ -15,7 +15,7 @@
 - 13 Claw Contraption
 - 14 Restroom Redoubt
 - 15 Warehouse Woes
-- 16 Reindeer Maze           **
+- 16 Reindeer Maze           *
 - 17 Chronospatial Computer  *
 - 18 RAM Run                 **
 - 19 Linen Layout            *
@@ -26,4 +26,4 @@
 - 24 Crossed Wires
 - 25 Code Chronicle          *
 
-left: 2 + 1 + 2 + 1 + 2 + 2 + 1 = 11
+left: 1 + 1 + 2 + 1 + 2 + 2 + 1 = 10

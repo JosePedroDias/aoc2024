@@ -15,24 +15,22 @@ it makes sense to capture meaningful ones.
 - https://www.geeksforgeeks.org/dynamic-programming/
 
 
-## A* (?)
-
-to find the shortest path using an heuristic
-
-- https://www.geeksforgeeks.org/a-search-algorithm/
-
-
-## Dijkstra (?)
+## Dijkstra (16)
 
 to find the shortest path between nodes is a weighted graph
 
 - https://en.wikipedia.org/wiki/Dijkstra%27s_algorithm
+- https://rosettacode.org/wiki/Dijkstra%27s_algorithm
 - https://www.geeksforgeeks.org/introduction-to-dijkstras-shortest-path-algorithm/
+- https://www.youtube.com/watch?v=GazC3A4OQTE
 
+## A* (16)
 
-## Shoelace formula
+to find the shortest path using an heuristic
 
-- https://www.geeksforgeeks.org/area-of-a-polygon-with-given-n-ordered-vertices/
+- https://www.geeksforgeeks.org/a-search-algorithm/
+- https://rosettacode.org/wiki/A*_search_algorithm
+- https://www.youtube.com/watch?v=ySN5Wnu88nE
 
 
 ## Bron-Kerbosch Algorithm (23)
@@ -44,12 +42,21 @@ finds the most well connected sets of nodes in a (non-directed) graph
 - https://iq.opengenus.org/bron-kerbosch-algorithm/
 
 
-## Binary add
+## Binary adder (24)
 
 - https://www.youtube.com/watch?v=t-jSowup1N0
 - https://www.build-electronic-circuits.com/full-adder/
 - https://falstad.com/circuit/ (circuits / combinational logic > full adder)
 - https://everycircuit.com/app
+
+
+## Shoelace formula (?)
+
+- https://www.geeksforgeeks.org/area-of-a-polygon-with-given-n-ordered-vertices/
+
+## Chinese Remainder Theorem
+
+- TODO
 
 
 ## Other

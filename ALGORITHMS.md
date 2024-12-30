@@ -24,7 +24,7 @@ to find the shortest path between nodes is a weighted graph
 - https://www.geeksforgeeks.org/introduction-to-dijkstras-shortest-path-algorithm/
 - https://www.youtube.com/watch?v=GazC3A4OQTE
 
-## A* (16)
+## A* (16?, 18?)
 
 to find the shortest path using an heuristic
 

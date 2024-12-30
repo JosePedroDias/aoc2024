@@ -63,7 +63,7 @@ private fun manhattan(a: Pos8, b: Pos8): Int {
     return abs(a.x - b.x) + abs(a.y - b.y)
 }
 
-const val MAX_SCORE = 2024
+//const val MAX_SCORE = 2024
 
 // https://rosettacode.org/wiki/A*_search_algorithm#Kotlin
 private fun navigate(m: Matrix8, t: Int, startP: Pos8, goalP: Pos8): Pair<List<Pos8>, Int> {
@@ -98,42 +98,58 @@ private fun navigate(m: Matrix8, t: Int, startP: Pos8, goalP: Pos8): Pair<List<P
             .filter { valid.contains(it) }
             .forEach { neighbour ->
                 val score = costFromStart.getValue(currentPos) + 1 //moveCost(currentPos, neighbour)
-                if (score < costFromStart.getOrDefault(neighbour, MAX_SCORE)) {
+                //if (score < costFromStart.getOrDefault(neighbour, MAX_SCORE)) {
                     if (!openVertices.contains(neighbour)) openVertices.add(neighbour)
                     cameFrom[neighbour] = currentPos
                     costFromStart[neighbour] = score
                     estimatedTotalCost[neighbour] = score + manhattan(neighbour, goalP)
-                }
+                //}
             }
     }
     throw IllegalArgumentException("no path from start $startP to goal $goalP")
 }
 
+private fun whenIsItIntractable(m: Matrix8, startT: Int, startP: Pos8, goalP: Pos8): Pair<Int, Pos8> {
+    m.forecast.subList(startT, m.forecast.size) .forEachIndexed { dt, obstacle ->
+        val t = dt + startT + 1
+        println("dt:$dt, t:${t}, obstacle:$obstacle")
+        try {
+            navigate(m, t, startP, goalP)
+        } catch (iae: IllegalArgumentException) {
+            println("first block: $obstacle at t:${t}")
+            return Pair(t, obstacle)
+        }
+    }
+    throw Error("unexpected")
+}
+
 fun main() {
     val dt = measureTime {
+        val startP = Pos8(0, 0)
+
         val tT1 = 12
         val sizeT1 = 7
+        val goalPT1 = Pos8(sizeT1-1, sizeT1-1)
         val mT1 = parse(readInput("18t1"), sizeT1)
-        val (pathT1, costT1) = navigate(
-            mT1,
-            tT1,
-            Pos8(0, 0),
-            Pos8(sizeT1-1, sizeT1-1),
-        )
+        val (pathT1, costT1) = navigate(mT1, tT1, startP, goalPT1)
         //println(mT1.toString(tT1, pathT1))
         check(costT1 == 22)
 
         val tP = 1024
         val sizeP = 71
+        val goalPP = Pos8(sizeP-1,sizeP-1)
         val mP = parse(readInput("18"), sizeP)
-        val (pathP, costP) = navigate(
-            mP,
-            tP,
-            Pos8(0, 0),
-            Pos8(sizeP-1,sizeP-1),
-        )
+        val (pathP, costP) = navigate(mP, tP, startP, goalPP)
         //println(mP.toString(tP, pathP))
         println("Answer to part 1: $costP")
+
+        //
+
+        val (tIntractableT1, obstacleT1) = whenIsItIntractable(mT1, tT1, startP, goalPT1)
+        check(obstacleT1 == Pos8(6, 1))
+
+        val (tIntractableP, obstacleP) = whenIsItIntractable(mP, tP, startP, goalPP)
+        println("Answer to part 2: $obstacleP")
     }
     println(dt)
 }
